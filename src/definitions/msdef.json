@@ -1,0 +1,4 @@
+{
+    "excluding_field": "Shop email",
+    "excluding_pattern":"magestore"
+}
