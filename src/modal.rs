@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 struct MerchantData {
     checked: bool,
     installed_count: u32,
@@ -10,7 +12,7 @@ struct MerchantData {
     subscription_events: Vec<HashMap<String, String>>,
     one_time_count: u32,
     one_time_details: HashMap<String, String>,
-    one_time_events: Vec<HashMap<String, String>>,
+    one_time_events: Vec<AppEvent>,
     installed_status: String,
     subscription_status: String,
 }
@@ -19,4 +21,16 @@ struct MerchantDataList {
     start_time: String,
     end_time: String,
     merchants: HashMap<String, MerchantData>,
+}
+
+struct AppEvent {
+    time: String,
+    event: String,
+    details: String,
+    billing_on: String,
+    shop_name: String,
+    shop_country: String,
+    shop_email: String,
+    shop_domain: String,
+    key: String    
 }
