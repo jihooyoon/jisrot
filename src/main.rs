@@ -12,5 +12,15 @@ fn main() {
     }
     let file_path: &str = args[1].as_str();
 
-    println!("{:?}", file_reader::read_csv_dict(file_path));
+    match file_reader::read_event_from_csv(file_path) {
+        Ok(app_event_list) => {
+            for app_event in app_event_list {
+                println!("Event: {:?}", app_event);
+            }
+        }
+        Err(e) => {
+            eprintln!("Error reading file: {}", e);
+            std::process::exit(1);
+        }
+    }
 }

@@ -1,14 +1,24 @@
 use crate::modal::*;
 use crate::definitions::common::*;
 use std::collections::HashMap;
+use std::hash::Hash;
 
-pub fn read_csv_dict(file_path: &str) -> Result<HashMap<String, String>, Box<dyn std::error::Error>> {
+pub fn read_event_from_csv(file_path: &str) -> Result<Vec<AppEvent>, Box<dyn std::error::Error>> {
     let mut rdr = csv::Reader::from_path(file_path)?;
     let headers: Vec<String> = rdr.headers()?.iter().map(|h| h.to_string()).collect();
     
-    let mut dict_result: HashMap<String, String> = HashMap::new();
+    let mut app_event_list: Vec<AppEvent> = Vec::new();
 
-    for record in rdr.records();
+    for record in rdr.records(){
+        let record_hash: HashMap<String, String> = record?.iter().zip(headers.iter())
+            .map(|(value, header)|(header.to_string(), value.to_string()))
+            .collect();
+        
+        match AppEvent::from_hashmap(&record_hash) {
+            Ok(app_event) => app_event_list.push(app_event),
+            Err(e) => println!("Error parsing record: {}", e),
+        }
+    }
 
-    Ok(dict_result)
+    Ok(app_event_list)
 }

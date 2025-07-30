@@ -30,5 +30,12 @@ pub const EVENT_FIELD: &str = "Event";
 pub const DETAILS_FIELD: &str = "Details";
 pub const TIME_FIELD: &str = "Date";
 pub const EMAIL_FIELD: &str = "Shop email";
+pub const BILLING_ON_FIELD: &str = "Billing on";
+pub const SHOP_DOMAIN_FIELD: &str = "Shop domain";
+pub const SHOP_NAME_FIELD: &str = "Shop name";
+pub const SHOP_COUNTRY_FIELD: &str = "Shop country";
 
 pub const NONE: &str = "None";
+
+pub const EVENT_TIME_PATTERN: &str = "%Y-%m-%d %H:%M:%S UTC";
+pub const BILLING_ON_PATTERN: &str = "%Y-%m-%d";
