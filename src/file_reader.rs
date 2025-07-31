@@ -1,7 +1,6 @@
 use crate::modal::*;
 use crate::definitions::common::*;
 use std::collections::HashMap;
-use std::hash::Hash;
 
 pub fn read_event_from_csv(file_path: &str) -> Result<Vec<AppEvent>, Box<dyn std::error::Error>> {
     let mut rdr = csv::Reader::from_path(file_path)?;
