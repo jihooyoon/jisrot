@@ -8,12 +8,12 @@ pub struct MerchantData {
     uninstalled_count: u32,
     store_closed_count: u32,
     store_reopened_count: u32,
-    installing_events: Vec<HashMap<String, String>>,
+    installing_events: Vec<AppEvent>,
     subscription_activated_count: u32,
     subscription_canceled_count: u32,
-    subscription_events: Vec<HashMap<String, String>>,
+    subscription_events: Vec<AppEvent>,
     one_time_count: u32,
-    one_time_details: HashMap<String, String>,
+    one_time_details: HashMap<String, u32>,
     one_time_events: Vec<AppEvent>,
     installed_status: String,
     subscription_status: String,
@@ -23,6 +23,25 @@ pub struct MerchantDataList {
     start_time: String,
     end_time: String,
     merchants: HashMap<String, MerchantData>,
+}
+
+pub struct ExcludingDef {
+    excluding_field: String,
+    excluding_pattern: String
+}
+
+enum PaidType {
+    Subscription,
+    OneTime,
+}
+
+pub struct PricingUnit {
+    paid_type: PaidType,
+    code: String,
+    name: String,
+    regex_pattern: String,
+    price: f64,
+    currency: String,
 }
 
 #[derive(Debug)]
@@ -36,11 +55,6 @@ pub struct AppEvent {
     shop_email: String,
     shop_domain: String,
     key: String    
-}
-
-enum DateTimeType {
-    DateOnly,
-    DateAndTime
 }
 
 impl AppEvent  {

@@ -39,3 +39,6 @@ pub const NONE: &str = "None";
 
 pub const EVENT_TIME_PATTERN: &str = "%Y-%m-%d %H:%M:%S UTC";
 pub const BILLING_ON_PATTERN: &str = "%Y-%m-%d";
+
+pub const PAID_TYPE_FIELD_SUBSCRIPTIONS: &str = "subscriptions";
+pub const PAID_TYPE_FIELD_ONE_TIME: &str = "one_times";

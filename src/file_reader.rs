@@ -21,3 +21,10 @@ pub fn read_event_from_csv(file_path: &str) -> Result<Vec<AppEvent>, Box<dyn std
 
     Ok(app_event_list)
 }
+
+pub fn read_pricing_def_from_json(file_path: &str) -> Result<(Vec<PricingUnit>, Vec<PricingUnit>), Box<dyn std::error::Error>> {
+    let file = std::fs::File::open(file_path)?;
+    let reader = std::io::BufReader::new(file);
+    let packs: Vec<OneTimePack> = serde_json::from_reader(reader)?;
+    Ok(packs)
+}
