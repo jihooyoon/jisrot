@@ -121,6 +121,8 @@ version = "0.1.0"
 dependencies = [
  "chrono",
  "csv",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -214,6 +216,18 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
+]
+
+[[package]]
+name = "serde_json"
+version = "1.0.142"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "030fedb782600dcbd6f02d479bf0d817ac3bb40d644745b769d6a96bc3afc5a7"
+dependencies = [
+ "itoa",
+ "memchr",
+ "ryu",
+ "serde",
 ]
 
 [[package]]

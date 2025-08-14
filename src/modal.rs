@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use chrono::{NaiveDateTime, NaiveDate};
 use crate::definitions::common::*;
+use serde::Deserialize;
 
 pub struct MerchantData {
     checked: bool,
@@ -30,13 +31,14 @@ pub struct ExcludingDef {
     excluding_pattern: String
 }
 
-enum PaidType {
-    Subscription,
-    OneTime,
+#[derive(Debug, Deserialize)]
+pub struct PricingDefs {
+    subscriptions: Vec<PricingUnit>,
+    one_times: Vec<PricingUnit>,
 }
 
+#[derive(Debug, Deserialize)]
 pub struct PricingUnit {
-    paid_type: PaidType,
     code: String,
     name: String,
     regex_pattern: String,
