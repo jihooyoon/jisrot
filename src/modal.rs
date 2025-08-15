@@ -26,6 +26,7 @@ pub struct MerchantDataList {
     merchants: HashMap<String, MerchantData>,
 }
 
+#[derive(Debug, Deserialize)]
 pub struct ExcludingDef {
     excluding_field: String,
     excluding_pattern: String
@@ -114,12 +115,12 @@ impl AppEvent  {
         
         match Self::parse_time(hashmap, TIME_FIELD, EVENT_TIME_PATTERN) {
             Ok(date_time) => time = Some(date_time),
-            Err(e) => return Err(e),
+            Err(e) => println!("Warning: {}", e),
         }
 
         match Self::parse_time(hashmap, BILLING_ON_FIELD, BILLING_ON_PATTERN) {
             Ok(date_time) => billing_on = Some(date_time),
-            Err(e) => return Err(e),            
+            Err(e) => println!("Warning: {}", e),
         }
 
         Ok(AppEvent {

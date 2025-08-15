@@ -29,3 +29,19 @@ pub fn read_pricing_def_from_json(file_path: &str) -> Result<PricingDefs, Box<dy
     let result = serde_json::from_reader(reader)?;
     Ok(result)
 }
+
+pub fn read_pricing_def_from_json_str(json_str: &str) -> Result<PricingDefs, serde_json::Error> {
+    Ok(serde_json::from_str(json_str)?)
+}
+
+pub fn read_excluding_def_from_json(file_path: &str) -> Result<ExcludingDef, Box<dyn std::error::Error>> {
+    let file = std::fs::File::open(file_path)?;
+    let reader = std::io::BufReader::new(file);
+    
+    let result = serde_json::from_reader(reader)?;
+    Ok(result)
+}
+
+pub fn read_excluding_def_from_json_str(json_str: &str) -> Result<ExcludingDef, serde_json::Error> {
+    Ok(serde_json::from_str(json_str)?)
+}

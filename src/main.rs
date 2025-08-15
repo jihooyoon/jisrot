@@ -1,39 +1,46 @@
 mod modal;
-mod file_reader;
+mod data_reader;
 mod definitions;
-use std::path;
-
 use definitions::common::*;
+use definitions::default_ms_pricing_def::*;
+use definitions::default_ms_excluding_def::*;
 use modal::*;
 
-fn main() {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<String> = std::env::args().collect();
 
-    if args.len() < 2 {
-        eprintln!("Usage: {} <file_path>", args[0]);
-        std::process::exit(1);
+    let mut excluding_def: ExcludingDef;
+    let mut pricing_defs: PricingDefs;
+
+    match args.len() {
+        0..=1 => {
+            eprintln!("Usage: {} <event_history_file_path> <excluding_definitions_file_path> <pricing_definitions_file_path>", args[0]);
+            std::process::exit(1);
+        }
+        2 => {
+            pricing_defs = data_reader::read_pricing_def_from_json_str(SBM_PRICING_DEF_JSON_STRING)?;
+            excluding_def = data_reader::read_excluding_def_from_json_str(MS_EXCLUDING_DEF_JSON_STRING)?;
+        }
+        3 => {
+            let excluding_def_file_path = &args[2];
+            excluding_def = data_reader::read_excluding_def_from_json(excluding_def_file_path)?;
+            pricing_defs = data_reader::read_pricing_def_from_json_str(SBM_PRICING_DEF_JSON_STRING)?;
+        }
+        4 => {
+            let excluding_def_file_path = &args[2];
+            let pricing_def_file_path = &args[3];
+            excluding_def = data_reader::read_excluding_def_from_json(excluding_def_file_path)?;
+            pricing_defs = data_reader::read_pricing_def_from_json(pricing_def_file_path)?;
+        }
+        _ => {
+            eprintln!("Too many arguments provided.");
+            std::process::exit(1);
+        }
     }
     
-    let file_path: &str = args[1].as_str();
+    let event_history_file_path: &str = args[1].as_str();
 
-    let path = path::Path::new(file_path);
-
-    if let Some(file_ext) = path.extension().and_then(|s| s.to_str()) {
-        if file_ext == "json" {
-            match file_reader::read_pricing_def_from_json(file_path) {
-                Ok(pricing_defs) => {
-                    println!("Pricing definitions loaded successfully: {:?}", pricing_defs);
-                    std::process::exit(0);
-                }
-                Err(e) => {
-                    eprintln!("Error reading JSON file: {}", e);
-                    std::process::exit(1);
-                }
-            }
-        } 
-    }
-
-    match file_reader::read_event_from_csv(file_path) {
+    match data_reader::read_event_from_csv(event_history_file_path) {
         Ok(app_event_list) => {
             for app_event in app_event_list {
                 println!("Event: {:?}", app_event);
@@ -44,4 +51,8 @@ fn main() {
             std::process::exit(1);
         }
     }
+
+    println!("Excluding Definition: {:?}", excluding_def);
+    println!("Pricing Definitions: {:?}", pricing_defs);
+    Ok(())
 }
