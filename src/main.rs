@@ -5,26 +5,27 @@ use definitions::common::*;
 use definitions::default_ms_pricing_def::*;
 use definitions::default_ms_excluding_def::*;
 use modal::*;
+use serde::de::value;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<String> = std::env::args().collect();
-
-    let mut excluding_def: ExcludingDef;
-    let mut pricing_defs: PricingDefs;
+    let mut debug_mode = true;
+    
+    let mut event_history_file_path: String = "".to_string();
+    let mut excluding_def = data_reader::read_excluding_def_from_json_str(MS_EXCLUDING_DEF_JSON_STRING)?;
+    let mut pricing_defs = data_reader::read_pricing_def_from_json_str(SBM_PRICING_DEF_JSON_STRING)?;
 
     match args.len() {
         0..=1 => {
-            eprintln!("Usage: {} <event_history_file_path> <excluding_definitions_file_path> <pricing_definitions_file_path>", args[0]);
+            eprintln!("Usage: {} <event_history_file_path> <excluding_definitions_file_path> <pricing_definitions_file_path> [--debug]", args[0]);
             std::process::exit(1);
         }
         2 => {
-            pricing_defs = data_reader::read_pricing_def_from_json_str(SBM_PRICING_DEF_JSON_STRING)?;
-            excluding_def = data_reader::read_excluding_def_from_json_str(MS_EXCLUDING_DEF_JSON_STRING)?;
+            event_history_file_path = args[1].clone();
         }
         3 => {
             let excluding_def_file_path = &args[2];
             excluding_def = data_reader::read_excluding_def_from_json(excluding_def_file_path)?;
-            pricing_defs = data_reader::read_pricing_def_from_json_str(SBM_PRICING_DEF_JSON_STRING)?;
         }
         4 => {
             let excluding_def_file_path = &args[2];
@@ -38,13 +39,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
     
-    let event_history_file_path: &str = args[1].as_str();
+    let mut app_event_list: Vec<AppEvent>;
 
-    match data_reader::read_event_from_csv(event_history_file_path) {
-        Ok(app_event_list) => {
-            for app_event in app_event_list {
-                println!("Event: {:?}", app_event);
-            }
+    match data_reader::read_event_from_csv(event_history_file_path.as_str()) {
+        Ok(value) => {
+            app_event_list = value;
         }
         Err(e) => {
             eprintln!("Error reading file: {}", e);
@@ -52,7 +51,24 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    println!("Excluding Definition: {:?}", excluding_def);
-    println!("Pricing Definitions: {:?}", pricing_defs);
+    if debug_mode {
+
+    }
+
+    if debug_mode {
+        println!("Debug Mode: Enabled");
+        println!("========================");
+        println!("Event History File Path: {}", event_history_file_path);
+        //println!("Excluding Definition File Path: {}", args[2]);
+        //println!("Pricing Definition File Path: {}", args[3]);
+        println!("========================");
+        println!("App Event List:\n");
+        for app_event in app_event_list {
+            println!("Event: {:?} \n", app_event);
+        }
+        println!("========================");
+        println!("Excluding Definition: {:?} \n", excluding_def);
+        println!("Pricing Definitions: {:?} \n", pricing_defs);
+    }
     Ok(())
 }
