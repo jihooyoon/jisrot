@@ -67,8 +67,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             println!("Event: {:?} \n", app_event);
         }
         println!("========================");
-        println!("Excluding Definition: {:?} \n", excluding_def);
-        println!("Pricing Definitions: {:?} \n", pricing_defs);
+        println!("Excluding Definition:\n{:?} \n", excluding_def);
+        println!("Pricing Definitions:\n{:?} \n", pricing_defs);
     }
     Ok(())
 }
