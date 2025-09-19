@@ -1,5 +1,6 @@
 mod modal;
 mod data_reader;
+mod analyze_event_history;
 mod definitions;
 use definitions::common::*;
 use definitions::default_ms_pricing_def::*;
@@ -41,7 +42,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     
     let mut app_event_list: Vec<AppEvent>;
 
-    match data_reader::read_event_from_csv(event_history_file_path.as_str()) {
+    match data_reader::read_events_from_csv(event_history_file_path.as_str()) {
         Ok(value) => {
             app_event_list = value;
         }

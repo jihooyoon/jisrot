@@ -1,41 +1,184 @@
 use std::collections::HashMap;
-use chrono::{NaiveDateTime, NaiveDate};
+use chrono::{format, NaiveDate, NaiveDateTime};
 use crate::definitions::common::*;
 use serde::Deserialize;
+use getset::{Getters, Setters};
 
+
+pub enum BillingCycle {
+    Monthly,
+    Yearly,
+}
+
+#[derive(Debug, Clone, Getters, Setters)]
+#[getset(get = "pub", set = "pub")]
 pub struct MerchantData {
+    shop_domain: String,
     checked: bool,
     installed_count: u32,
     uninstalled_count: u32,
     store_closed_count: u32,
     store_reopened_count: u32,
+    
+    #[getset(skip)]
     installing_events: Vec<AppEvent>,
+    
     subscription_activated_count: u32,
     subscription_canceled_count: u32,
+    
+    #[getset(skip)]
     subscription_events: Vec<AppEvent>,
+    
     one_time_count: u32,
+    
+    #[getset(skip)]
     one_time_details: HashMap<String, u32>,
+    
+    #[getset(skip)]
     one_time_events: Vec<AppEvent>,
+    
     installed_status: String,
     subscription_status: String,
 }
 
+impl MerchantData {
+    
+    pub fn new(shop_domain: &String, one_time_packs: &Vec<PricingUnit>) -> Self {
+        
+        let mut one_time_details: HashMap<String, u32> = HashMap::new();
+        
+        for pack in one_time_packs.iter() {
+            one_time_details.insert(pack.code.clone(), 0);
+        }
+
+        Self {
+            shop_domain: shop_domain.clone(),
+            checked: false,
+            installed_count: 0,
+            uninstalled_count: 0,
+            store_closed_count: 0,
+            store_reopened_count: 0,
+            installing_events: Vec::new(),
+            subscription_activated_count: 0,
+            subscription_canceled_count: 0,
+            subscription_events: Vec::new(),
+            one_time_count: 0,
+            one_time_details: one_time_details,
+            one_time_events: Vec::new(),
+            installed_status: NONE.to_string(),
+            subscription_status: NONE.to_string(),
+        }
+    }
+
+    pub fn increase_one_time_pack_count(&mut self, pack: &PricingUnit, count: u32) -> Result<Self, String> {
+        if let Some(entry) = self.one_time_details.get_mut(&pack.code) {
+            *entry += count;
+            Ok(self.clone())
+        } else {
+            Err(format!("[Merchant Data] One-time pack code {} not found in initialized one-time count stats", pack.code))
+        }
+    }
+    
+}
+
+#[derive(Debug, Clone, Getters, Setters)]
 pub struct MerchantDataList {
-    start_time: String,
-    end_time: String,
+    start_time: Option<NaiveDateTime>,
+    end_time: Option<NaiveDateTime>,
+
+    #[getset(skip)]
     merchants: HashMap<String, MerchantData>,
 }
 
-#[derive(Debug, Deserialize)]
+impl MerchantDataList {
+    pub fn new() -> Self {
+        Self {
+            start_time: None,
+            end_time: None,
+            merchants: HashMap::new(),
+        }   
+    }
+}
+
+#[derive(Debug, Clone, Getters, Setters)]
+#[getset(get = "pub", set = "pub")]
+pub struct TotalStats {
+    start_time: Option<NaiveDateTime>,
+    end_time: Option<NaiveDateTime>,
+    start_time_str: String,
+    end_time_str: String,
+    
+    installed_count: u32,
+    uninstalled_count: u32,
+    old_uninstalled_count: u32,
+    total_churn_rate: f64,
+    churn_rate: f64,
+    merchant_growth: i32,
+    
+    store_closed_count: u32,
+    store_reopened_count: u32,
+    
+    one_time_count: u32,
+    
+    #[getset(skip)]
+    one_time_details: HashMap<String, u32>,
+
+    new_sub_count: u32,
+    canceled_sub_count: u32,
+    total_sub_growth: i32,
+    
+    sub_stats_details: DetailedSubscriptionStats,
+    
+    total_paid_growth: i32
+}
+
+impl TotalStats {
+    pub fn new(pricing_defs: &PricingDefs) -> Self {
+        
+        let mut one_time_details: HashMap<String, u32> = HashMap::new();
+        
+        for pack in pricing_defs.one_times.iter() {
+            one_time_details.insert(pack.code.clone(), 0);
+        }
+
+        Self {
+            start_time: None,
+            end_time: None,
+            start_time_str: NONE.to_string(),
+            end_time_str: NONE.to_string(),
+            installed_count: 0,
+            uninstalled_count: 0,
+            old_uninstalled_count: 0,
+            total_churn_rate: 0.0,
+            churn_rate: 0.0,
+            merchant_growth: 0,
+            store_closed_count: 0,
+            store_reopened_count: 0,
+            one_time_count: 0,
+            one_time_details: one_time_details,
+            new_sub_count: 0,
+            canceled_sub_count: 0,
+            total_sub_growth: 0,
+            sub_stats_details: DetailedSubscriptionStats::new(&pricing_defs.subscriptions),
+            total_paid_growth: 0
+        }
+    }
+
+    pub fn increase_one_time_pack_count(&mut self, pack: &PricingUnit, count: u32) -> Result<Self, String> {
+        if let Some(entry) = self.one_time_details.get_mut(&pack.code) {
+            *entry += count;
+            Ok(self.clone())
+        } else {
+            Err(format!("[TotalStats] One-time pack code {} not found in initialized one-time count stats", pack.code))
+        }
+    }
+}
+
+#[derive(Debug, Deserialize, Getters, Setters)]
+#[getset(get = "pub", set = "pub")]
 pub struct ExcludingDef {
     excluding_field: String,
     excluding_pattern: String
-}
-
-#[derive(Debug, Deserialize)]
-pub struct PricingDefs {
-    subscriptions: Vec<PricingUnit>,
-    one_times: Vec<PricingUnit>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -47,7 +190,85 @@ pub struct PricingUnit {
     currency: String,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Deserialize)]
+pub struct PricingDefs {
+    subscriptions: Vec<PricingUnit>,
+    one_times: Vec<PricingUnit>,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct SubscriptionStatsCounter {
+    monthly_counts: HashMap<String, u32>,
+    yearly_counts: HashMap<String, u32>,
+}
+
+impl SubscriptionStatsCounter {
+    
+    pub fn new(subscription_plan_list: &Vec<PricingUnit>) -> Self {
+        let mut monthly_counts:HashMap<String, u32> = HashMap::new();
+        let mut yearly_counts:HashMap<String, u32> = HashMap::new(); 
+        
+        for subscription_plan in subscription_plan_list.iter() {
+            monthly_counts.insert(subscription_plan.code.clone(), 0);
+            yearly_counts.insert(subscription_plan.code.clone(), 0);
+        }
+
+        Self {
+            monthly_counts:monthly_counts,
+            yearly_counts:yearly_counts
+        }
+    }
+
+    pub fn increase(&mut self, subscription_plan: &PricingUnit, billing_cycle: &BillingCycle, count: u32) -> Result<Self, String> {
+        
+        match billing_cycle {
+            
+            BillingCycle::Monthly => {
+                if let Some(entry) = self.monthly_counts.get_mut(&subscription_plan.code) {
+                    *entry += count;
+                    Ok(self.clone())
+                } else {
+                    Err(format!("[SubscriptionStatsCounter] Subscription plan code {} not found in initialized monthly count stats", subscription_plan.code))
+                }
+            }
+            
+            BillingCycle::Yearly => {
+                if let Some(entry) = self.yearly_counts.get_mut(&subscription_plan.code) {
+                    *entry += count;
+                    Ok(self.clone())
+                } else {
+                    Err(format!("[SubscriptionStatsCounter] Subscription plan code {} not found in initialized yearly count stats", subscription_plan.code))
+                }
+            }
+
+        }
+
+    }
+    
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct DetailedSubscriptionStats {
+    new_sub: SubscriptionStatsCounter,
+    canceled_sub: SubscriptionStatsCounter,
+    sub_growth: SubscriptionStatsCounter,
+    all_new_sub: SubscriptionStatsCounter,
+    all_canceled_sub: SubscriptionStatsCounter
+}
+
+impl DetailedSubscriptionStats {
+    pub fn new(subscription_plan_list: &Vec<PricingUnit>) -> Self {
+        Self {
+            new_sub: SubscriptionStatsCounter::new(subscription_plan_list),
+            canceled_sub: SubscriptionStatsCounter::new(subscription_plan_list),
+            sub_growth: SubscriptionStatsCounter::new(subscription_plan_list),
+            all_new_sub: SubscriptionStatsCounter::new(subscription_plan_list),
+            all_canceled_sub: SubscriptionStatsCounter::new(subscription_plan_list),
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct AppEvent {
     time: Option<NaiveDateTime>,
     event: String,

@@ -2,7 +2,7 @@ use crate::modal::*;
 use crate::definitions::common::*;
 use std::collections::HashMap;
 
-pub fn read_event_from_csv(file_path: &str) -> Result<Vec<AppEvent>, Box<dyn std::error::Error>> {
+pub fn read_events_from_csv(file_path: &str) -> Result<Vec<AppEvent>, Box<dyn std::error::Error>> {
     let mut rdr = csv::Reader::from_path(file_path)?;
     let headers: Vec<String> = rdr.headers()?.iter().map(|h| h.to_string()).collect();
     
