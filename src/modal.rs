@@ -78,15 +78,47 @@ impl MerchantData {
             Err(format!("[Merchant Data] One-time pack code {} not found in initialized one-time count stats", pack.code))
         }
     }
+
+    pub fn increase_installed_count(&mut self, count: u32) -> Self {
+        self.installed_count += count;
+        self.clone()
+    }
+
+    pub fn increase_uninstalled_count(&mut self, count: u32) -> Self {
+        self.uninstalled_count += count;
+        self.clone()
+    }
+
+    pub fn increase_store_closed_count(&mut self, count: u32) -> Self {
+        self.store_closed_count += count;
+        self.clone()
+    }
+
+    pub fn push_subscription_event(&mut self, event: &AppEvent) -> Self {
+        let mut new_self = self.clone();
+        new_self.subscription_events.push(event.clone());
+        new_self
+    }
+
+    pub fn push_one_time_event(&mut self, event: &AppEvent) -> Self {
+        let mut new_self = self.clone();
+        new_self.one_time_events.push(event.clone());
+        new_self
+    }
+
+    pub fn push_installing_event(&mut self, event: &AppEvent) -> Self {
+        let mut new_self = self.clone();
+        new_self.installing_events.push(event.clone());
+        new_self
+    }
     
 }
 
 #[derive(Debug, Clone, Getters, Setters)]
+#[getset(get = "pub", set = "pub")]
 pub struct MerchantDataList {
     start_time: Option<NaiveDateTime>,
     end_time: Option<NaiveDateTime>,
-
-    #[getset(skip)]
     merchants: HashMap<String, MerchantData>,
 }
 
@@ -97,6 +129,12 @@ impl MerchantDataList {
             end_time: None,
             merchants: HashMap::new(),
         }   
+    }
+
+    pub fn update_merchant(&mut self, merchant: MerchantData) -> Self {
+        let mut new_self = self.clone();
+        new_self.merchants.insert(merchant.shop_domain().clone(), merchant);
+        new_self
     }
 }
 
@@ -172,6 +210,21 @@ impl TotalStats {
             Err(format!("[TotalStats] One-time pack code {} not found in initialized one-time count stats", pack.code))
         }
     }
+
+    pub fn increase_installed_count(&mut self, count: u32) -> Self {
+        self.installed_count += count;
+        self.clone()
+    }
+
+    pub fn increase_uninstalled_count(&mut self, count: u32) -> Self {
+        self.uninstalled_count += count;
+        self.clone()
+    }
+    
+    pub fn increase_store_closed_count(&mut self, count: u32) -> Self {
+        self.store_closed_count += count;
+        self.clone()
+    }
 }
 
 #[derive(Debug, Deserialize, Getters, Setters)]
@@ -190,7 +243,8 @@ pub struct PricingUnit {
     currency: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Getters, Setters)]
+#[getset(get = "pub", set = "pub")]
 pub struct PricingDefs {
     subscriptions: Vec<PricingUnit>,
     one_times: Vec<PricingUnit>,
@@ -268,7 +322,8 @@ impl DetailedSubscriptionStats {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Getters, Setters)]
+#[getset(get = "pub", set = "pub")]
 pub struct AppEvent {
     time: Option<NaiveDateTime>,
     event: String,
