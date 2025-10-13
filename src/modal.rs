@@ -2,9 +2,10 @@ use std::collections::HashMap;
 use chrono::{format, NaiveDate, NaiveDateTime};
 use crate::definitions::common::*;
 use serde::{Deserialize, Serialize};
-use getset::{Getters, Setters};
+use getset::{Getters, MutGetters, Setters};
 use anyhow::{Result, anyhow};
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum BillingCycle {
     Monthly,
     Yearly,
@@ -20,13 +21,13 @@ pub struct MerchantData {
     store_closed_count: u32,
     store_reopened_count: u32,
     
-    #[getset(skip)]
+    #[getset(get = "pub", set = "")]
     installing_events: Vec<AppEvent>,
     
     subscription_activated_count: u32,
     subscription_canceled_count: u32,
     
-    #[getset(skip)]
+    #[getset(get = "pub", set = "")]
     subscription_events: Vec<AppEvent>,
     
     one_time_count: u32,
@@ -39,6 +40,10 @@ pub struct MerchantData {
     
     installed_status: String,
     subscription_status: String,
+    last_new_sub_plan: Option<PricingUnit>,
+    last_new_sub_billing_cycle: Option<BillingCycle>,
+    first_canceled_sub_plan: Option<PricingUnit>,
+    first_canceled_sub_billing_cycle: Option<BillingCycle>,
 }
 
 impl MerchantData {
@@ -67,6 +72,10 @@ impl MerchantData {
             one_time_events: Vec::new(),
             installed_status: NONE.to_string(),
             subscription_status: NONE.to_string(),
+            last_new_sub_plan: None,
+            last_new_sub_billing_cycle: None,
+            first_canceled_sub_plan: None,
+            first_canceled_sub_billing_cycle: None,
         }
     }
 
@@ -95,6 +104,10 @@ impl MerchantData {
         self.store_closed_count += count;
     }
 
+    pub fn increase_store_reopened_count(&mut self, count: u32) {
+        self.store_reopened_count += count;
+    }
+
     pub fn increase_subscription_canceled_count(&mut self, count: u32) {
         self.subscription_canceled_count += count;
     }
@@ -117,11 +130,13 @@ impl MerchantData {
     
 }
 
-#[derive(Debug, Clone, Getters, Setters, Serialize, Deserialize)]
+#[derive(Debug, Clone, Getters, MutGetters, Setters, Serialize, Deserialize)]
 #[getset(get = "pub", set = "pub")]
 pub struct MerchantDataList {
     start_time: Option<NaiveDateTime>,
     end_time: Option<NaiveDateTime>,
+    
+    #[getset(get = "pub", get_mut = "pub", set = "")]
     merchants: HashMap<String, MerchantData>,
 }
 
@@ -139,8 +154,8 @@ impl MerchantDataList {
     }
 }
 
-#[derive(Debug, Clone, Getters, Setters, Serialize, Deserialize)]
-#[getset(get = "pub", set = "pub")]
+#[derive(Debug, Clone, Getters, MutGetters, Setters, Serialize, Deserialize)]
+#[getset(get = "pub", get_mut = "pub", set = "pub")]
 pub struct TotalStats {
     start_time: Option<NaiveDateTime>,
     end_time: Option<NaiveDateTime>,
@@ -164,11 +179,11 @@ pub struct TotalStats {
 
     new_sub_count: u32,
     canceled_sub_count: u32,
-    total_sub_growth: i32,
+    sub_growth: i32,
     
     sub_stats_details: DetailedSubscriptionStats,
     
-    total_paid_growth: i32
+    paid_growth: i32
 }
 
 impl TotalStats {
@@ -197,9 +212,9 @@ impl TotalStats {
             one_time_details: one_time_details,
             new_sub_count: 0,
             canceled_sub_count: 0,
-            total_sub_growth: 0,
+            sub_growth: 0,
             sub_stats_details: DetailedSubscriptionStats::new(&pricing_defs.subscriptions),
-            total_paid_growth: 0
+            paid_growth: 0
         }
     }
 
@@ -223,9 +238,25 @@ impl TotalStats {
     pub fn increase_uninstalled_count(&mut self, count: u32) {
         self.uninstalled_count += count;
     }
+
+    pub fn increase_old_uninstalled_count(&mut self, count: u32) {
+        self.old_uninstalled_count += count;
+    }
     
     pub fn increase_store_closed_count(&mut self, count: u32) {
         self.store_closed_count += count;
+    }
+
+    pub fn increase_store_reopened_count(&mut self, count: u32) {
+        self.store_reopened_count += count;
+    }
+
+    pub fn increase_new_sub_count(&mut self, count: u32) {
+        self.new_sub_count += count;
+    }
+
+    pub fn increase_canceled_sub_count(&mut self, count: u32) {
+        self.canceled_sub_count += count;
     }
 }
 
@@ -236,7 +267,7 @@ pub struct ExcludingDef {
     excluding_pattern: String
 }
 
-#[derive(Debug, Deserialize, Getters, Setters)]
+#[derive(Clone, Debug, Serialize, Deserialize, Getters, Setters)]
 #[getset(get = "pub", set = "pub")]
 pub struct PricingUnit {
     code: String,
@@ -304,7 +335,8 @@ impl SubscriptionStatsCounter {
     
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Getters, MutGetters, Setters, Serialize, Deserialize, Clone)]
+#[getset(get = "pub", get_mut = "pub", set = "pub")]
 pub struct DetailedSubscriptionStats {
     new_sub: SubscriptionStatsCounter,
     canceled_sub: SubscriptionStatsCounter,

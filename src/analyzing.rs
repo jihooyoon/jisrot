@@ -1,6 +1,7 @@
 use crate::modal::*;
 use crate::definitions::common::*;
 use regex::Regex;
+use anyhow::{Result, anyhow};
 
 pub fn build_merchant_data_and_count_basic_stats (
     app_event_list: &Vec<AppEvent>,
@@ -52,6 +53,15 @@ pub fn build_merchant_data_and_count_basic_stats (
             continue;
         }
 
+        re = Regex::new(STORE_REOPENED_STRING).unwrap();
+        if re.is_match(event.event().as_str()) {
+            total_stats.increase_store_reopened_count(1);
+            current_merchant_data.increase_store_reopened_count(1);
+            current_merchant_data.push_installing_event(event);
+            merchant_data_list.update_merchant(current_merchant_data);
+            continue;
+        }
+
         // Count One-Time
         if ONE_TIME_ACTIVATED_STRINGS.contains(&event.event().as_str()) {
             total_stats.increase_one_time_count(1);
@@ -87,4 +97,167 @@ pub fn build_merchant_data_and_count_basic_stats (
     }
 
     (total_stats, merchant_data_list)
+}
+
+fn process_merchant_data_and_count_final_stats(
+    total_stats: &mut TotalStats,
+    merchant_data_list: &mut MerchantDataList,
+    pricing_defs: &PricingDefs
+) -> anyhow::Result<()> {
+
+    // Calculate final stats
+    total_stats.set_merchant_growth(
+        *total_stats.installed_count() as i32 + *total_stats.store_reopened_count() as i32 
+        - *total_stats.uninstalled_count() as i32 - *total_stats.store_closed_count() as i32);
+    
+    total_stats.set_total_churn_rate(
+        if *total_stats.installed_count() > 0 {
+            (*total_stats.uninstalled_count() as f64 / *total_stats.installed_count() as f64) * 100.0
+        } else {
+            0.0
+        });
+
+    
+    // Process merchant data
+    for merchant in &mut merchant_data_list.merchants_mut().values_mut() {
+        // Updated installed status
+        match *merchant.installed_count() as i32 + *merchant.store_reopened_count() as i32 
+        - *merchant.uninstalled_count() as i32 - *merchant.store_closed_count() as i32 {
+            delta if delta > 0 => {
+                merchant.set_installed_status(INSTALLED_STRING.to_string());
+            },
+            delta if delta < 0 => {
+                merchant.set_installed_status(UNINSTALLED_STRING.to_string());
+                if merchant.installing_events().len() > 0 
+                && merchant.installing_events().first().unwrap().event() == UNINSTALLED_STRING {
+                    merchant.set_installed_status(UNINSTALLED_OLD_STRING.to_string());
+                    total_stats.increase_old_uninstalled_count(1);
+                }
+            },
+            _ => { 
+                merchant.set_installed_status(NONE.to_string());
+            }
+        }
+
+        
+        // Determine final subscription status
+        match *merchant.subscription_activated_count() as i32 
+        - *merchant.subscription_canceled_count() as i32 {
+            delta if delta > 0 => {
+                merchant.set_subscription_status(SUBSCRIPTION_STATUS_ACTIVE.to_string());
+                total_stats.increase_new_sub_count(1);
+            },
+            delta if delta < 0 => {
+                merchant.set_subscription_status(SUBSCRIPTION_STATUS_CANCELED.to_string());
+                total_stats.increase_canceled_sub_count(1);
+            },
+            _ => {
+                merchant.set_subscription_status(NONE.to_string());
+            }
+        }
+
+        // Determine new subscription details
+        for event in merchant.clone().subscription_events().iter().rev() { // Use reverse order to get the latest activated event
+            if SUBSCRIPTION_ACTIVATED_STRINGS.contains(&event.event().as_str()) {
+                // Determine plan
+                for plan in pricing_defs.subscriptions() {
+                    let mut re = Regex::new(plan.regex_pattern().as_str()).unwrap();
+                    if re.is_match(event.details().as_str()) {
+                        merchant.set_last_new_sub_plan(Some(plan.clone()));
+                        
+                        // Determine billing cycle
+                        re = Regex::new(YEARLY_PATTERN).unwrap();
+                        if re.is_match(event.details().as_str()) {
+                            merchant.set_last_new_sub_billing_cycle(Some(BillingCycle::Yearly));
+                        } else {
+                            merchant.set_last_new_sub_billing_cycle(Some(BillingCycle::Monthly));
+                        }
+                        
+                        total_stats.sub_stats_details_mut().all_new_sub_mut().increase(
+                            plan, 
+                            merchant.last_new_sub_billing_cycle().as_ref().unwrap(), 
+                            1)
+                            .unwrap();
+                        
+                        // Determine if the event stands for an active subscription
+                        if merchant.subscription_status() == SUBSCRIPTION_STATUS_ACTIVE {
+                            total_stats.sub_stats_details_mut().new_sub_mut().increase(
+                                plan, 
+                                merchant.last_new_sub_billing_cycle().as_ref().unwrap(), 
+                                1).
+                                unwrap();
+                        }
+
+                        break;
+                    }
+                
+                }
+
+                break;
+            }
+        }
+
+        // Determine canceled subscription details
+        for event in merchant.clone().subscription_events().iter() { // Use normal order to get the earliest canceled event
+            if SUBSCRIPTION_CANCELED_STRINGS.contains(&event.event().as_str()) {
+                // Determine plan
+                for plan in pricing_defs.subscriptions() {
+                    let mut re = Regex::new(plan.regex_pattern().as_str()).unwrap();
+                    if re.is_match(event.details().as_str()) {
+                        merchant.set_first_canceled_sub_plan(Some(plan.clone()));
+                        
+                        // Determine billing cycle
+                        re = Regex::new(YEARLY_PATTERN).unwrap();
+                        if re.is_match(event.details().as_str()) {
+                            merchant.set_first_canceled_sub_billing_cycle(Some(BillingCycle::Yearly));
+                        } else {
+                            merchant.set_first_canceled_sub_billing_cycle(Some(BillingCycle::Monthly));
+                        }
+                        
+                        total_stats.sub_stats_details_mut().all_canceled_sub_mut().increase(
+                            plan, 
+                            merchant.first_canceled_sub_billing_cycle().as_ref().unwrap(), 
+                            1)
+                            .unwrap();
+                        
+                        // Determine if the event stands for a canceled subscription
+                        if merchant.subscription_status() == SUBSCRIPTION_STATUS_CANCELED {
+                            total_stats.sub_stats_details_mut().canceled_sub_mut().increase(
+                                plan, 
+                                merchant.first_canceled_sub_billing_cycle().as_ref().unwrap(), 
+                                1).
+                                unwrap();
+                        }
+
+                        break;
+                    }
+                
+                }
+
+                break;
+            }
+        }
+
+        // Update final total data
+        total_stats.set_churn_rate(
+            if *total_stats.installed_count() > 0 {
+                (*total_stats.uninstalled_count() as f64 - *total_stats.old_uninstalled_count() as f64)
+                / *total_stats.installed_count() as f64 
+                * 100.0
+            } else {
+                0.0
+            }
+        );
+
+        total_stats.set_sub_growth(
+            *total_stats.new_sub_count() as i32 - *total_stats.canceled_sub_count() as i32
+        );
+
+        total_stats.set_paid_growth(
+            total_stats.sub_growth() + *total_stats.one_time_count() as i32
+        );
+
+    }
+
+    Ok(())
 }

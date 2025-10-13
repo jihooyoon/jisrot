@@ -42,3 +42,5 @@ pub const BILLING_ON_PATTERN: &str = "%Y-%m-%d";
 
 pub const PAID_TYPE_FIELD_SUBSCRIPTIONS: &str = "subscriptions";
 pub const PAID_TYPE_FIELD_ONE_TIME: &str = "one_times";
+
+pub const YEARLY_PATTERN: &str = "Year";
