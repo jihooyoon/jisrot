@@ -52,7 +52,38 @@ pub fn build_merchant_data_and_count_basic_stats (
             continue;
         }
 
-        
+        // Count One-Time
+        if ONE_TIME_ACTIVATED_STRINGS.contains(&event.event().as_str()) {
+            total_stats.increase_one_time_count(1);
+            current_merchant_data.increase_one_time_count(1);
+            current_merchant_data.push_one_time_event(event);
+
+            for pack in pricing_defs.one_times() {
+                re = Regex::new(pack.regex_pattern().as_str()).unwrap();
+                if re.is_match(event.details().as_str()) {
+                    total_stats.increase_one_time_pack_count(pack, 1).unwrap();
+                    current_merchant_data.increase_one_time_pack_count(pack, 1).unwrap();
+                    break;
+                }
+            }
+            merchant_data_list.update_merchant(current_merchant_data);
+            continue;
+        }
+
+        // Count Subscriptions
+        if SUBSCRIPTION_ACTIVATED_STRINGS.contains(&event.event().as_str()) {
+            current_merchant_data.increase_subscription_activated_count(1);
+            current_merchant_data.push_subscription_event(event);
+            merchant_data_list.update_merchant(current_merchant_data);
+            continue;
+        }
+        if SUBSCRIPTION_CANCELED_STRINGS.contains(&event.event().as_str()) {
+            current_merchant_data.increase_subscription_canceled_count(1);
+            current_merchant_data.push_subscription_event(event);
+            merchant_data_list.update_merchant(current_merchant_data);
+            continue;
+        }
+
     }
 
     (total_stats, merchant_data_list)

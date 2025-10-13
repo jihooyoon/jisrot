@@ -70,6 +70,11 @@ impl MerchantData {
         }
     }
 
+    pub fn increase_one_time_count(&mut self, count: u32) -> Self {
+        self.one_time_count += count;
+        self.clone()
+    }
+    
     pub fn increase_one_time_pack_count(&mut self, pack: &PricingUnit, count: u32) -> Result<Self, String> {
         if let Some(entry) = self.one_time_details.get_mut(&pack.code) {
             *entry += count;
@@ -91,6 +96,16 @@ impl MerchantData {
 
     pub fn increase_store_closed_count(&mut self, count: u32) -> Self {
         self.store_closed_count += count;
+        self.clone()
+    }
+
+    pub fn increase_subscription_canceled_count(&mut self, count: u32) -> Self {
+        self.subscription_canceled_count += count;
+        self.clone()
+    }
+
+    pub fn increase_subscription_activated_count(&mut self, count: u32) -> Self {
+        self.subscription_activated_count += count;
         self.clone()
     }
 
@@ -202,6 +217,11 @@ impl TotalStats {
         }
     }
 
+    pub fn increase_one_time_count (&mut self, count: u32) -> Self {
+        self.one_time_count += count;
+        self.clone()
+    }
+    
     pub fn increase_one_time_pack_count(&mut self, pack: &PricingUnit, count: u32) -> Result<Self, String> {
         if let Some(entry) = self.one_time_details.get_mut(&pack.code) {
             *entry += count;
@@ -234,7 +254,8 @@ pub struct ExcludingDef {
     excluding_pattern: String
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Getters, Setters)]
+#[getset(get = "pub", set = "pub")]
 pub struct PricingUnit {
     code: String,
     name: String,
