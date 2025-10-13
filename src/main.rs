@@ -1,6 +1,6 @@
 mod modal;
-mod data_reader;
-mod analyze_event_history;
+mod data_io;
+mod analyzing;
 mod definitions;
 use definitions::common::*;
 use definitions::default_ms_pricing_def::*;
@@ -12,27 +12,27 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<String> = std::env::args().collect();
     let mut debug_mode = true;
     
-    let mut event_history_file_path: String = "".to_string();
-    let mut excluding_def = data_reader::read_excluding_def_from_json_str(MS_EXCLUDING_DEF_JSON_STRING)?;
-    let mut pricing_defs = data_reader::read_pricing_def_from_json_str(SBM_PRICING_DEF_JSON_STRING)?;
+    let mut event_history_file_path: String = "drafts/test_data.csv".to_string();
+    let mut excluding_def = data_io::read_excluding_def_from_json_str(MS_EXCLUDING_DEF_JSON_STRING)?;
+    let mut pricing_defs = data_io::read_pricing_def_from_json_str(SBM_PRICING_DEF_JSON_STRING)?;
 
     match args.len() {
         0..=1 => {
             eprintln!("Usage: {} <event_history_file_path> <excluding_definitions_file_path> <pricing_definitions_file_path> [--debug]", args[0]);
-            std::process::exit(1);
+            // std::process::exit(1);
         }
         2 => {
             event_history_file_path = args[1].clone();
         }
         3 => {
             let excluding_def_file_path = &args[2];
-            excluding_def = data_reader::read_excluding_def_from_json(excluding_def_file_path)?;
+            excluding_def = data_io::read_excluding_def_from_json(excluding_def_file_path)?;
         }
         4 => {
             let excluding_def_file_path = &args[2];
             let pricing_def_file_path = &args[3];
-            excluding_def = data_reader::read_excluding_def_from_json(excluding_def_file_path)?;
-            pricing_defs = data_reader::read_pricing_def_from_json(pricing_def_file_path)?;
+            excluding_def = data_io::read_excluding_def_from_json(excluding_def_file_path)?;
+            pricing_defs = data_io::read_pricing_def_from_json(pricing_def_file_path)?;
         }
         _ => {
             eprintln!("Too many arguments provided.");
@@ -42,7 +42,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     
     let mut app_event_list: Vec<AppEvent>;
 
-    match data_reader::read_events_from_csv(event_history_file_path.as_str()) {
+    match data_io::read_events_from_csv(event_history_file_path.as_str()) {
         Ok(value) => {
             app_event_list = value;
         }
@@ -52,9 +52,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    if debug_mode {
+    let (total_stats, merchan_data_list) = analyzing::build_merchant_data_and_count_basic_stats(
+        &app_event_list,
+        &pricing_defs,
+        &excluding_def
+    );
 
-    }
+    data_io::write_total_stats_to_json("drafts/total_stats.json", &total_stats)?;
+    
 
     if debug_mode {
         println!("Debug Mode: Enabled");
@@ -70,6 +75,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("========================");
         println!("Excluding Definition:\n{:?} \n", excluding_def);
         println!("Pricing Definitions:\n{:?} \n", pricing_defs);
+        println!("========================");
+        println!("Writing merchant data to file...");
+        data_io::write_merchant_data_to_json("drafts/merchant_data.json", &merchan_data_list)?;
+        println!("Done.");
     }
     Ok(())
 }

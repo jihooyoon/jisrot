@@ -1,16 +1,16 @@
 use std::collections::HashMap;
 use chrono::{format, NaiveDate, NaiveDateTime};
 use crate::definitions::common::*;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use getset::{Getters, Setters};
-
+use anyhow::{Result, anyhow};
 
 pub enum BillingCycle {
     Monthly,
     Yearly,
 }
 
-#[derive(Debug, Clone, Getters, Setters)]
+#[derive(Debug, Clone, Getters, Setters, Serialize, Deserialize)]
 #[getset(get = "pub", set = "pub")]
 pub struct MerchantData {
     shop_domain: String,
@@ -70,66 +70,54 @@ impl MerchantData {
         }
     }
 
-    pub fn increase_one_time_count(&mut self, count: u32) -> Self {
+    pub fn increase_one_time_count(&mut self, count: u32)  {
         self.one_time_count += count;
-        self.clone()
     }
     
-    pub fn increase_one_time_pack_count(&mut self, pack: &PricingUnit, count: u32) -> Result<Self, String> {
+    pub fn increase_one_time_pack_count(&mut self, pack: &PricingUnit, count: u32) -> anyhow::Result<()> {
         if let Some(entry) = self.one_time_details.get_mut(&pack.code) {
             *entry += count;
-            Ok(self.clone())
+            Ok(())
         } else {
-            Err(format!("[Merchant Data] One-time pack code {} not found in initialized one-time count stats", pack.code))
+            Err(anyhow!("[Merchant Data] One-time pack code {} not found in initialized one-time count stats", pack.code))
         }
     }
 
-    pub fn increase_installed_count(&mut self, count: u32) -> Self {
+    pub fn increase_installed_count(&mut self, count: u32) {
         self.installed_count += count;
-        self.clone()
     }
 
-    pub fn increase_uninstalled_count(&mut self, count: u32) -> Self {
+    pub fn increase_uninstalled_count(&mut self, count: u32) {
         self.uninstalled_count += count;
-        self.clone()
     }
 
-    pub fn increase_store_closed_count(&mut self, count: u32) -> Self {
+    pub fn increase_store_closed_count(&mut self, count: u32) {
         self.store_closed_count += count;
-        self.clone()
     }
 
-    pub fn increase_subscription_canceled_count(&mut self, count: u32) -> Self {
+    pub fn increase_subscription_canceled_count(&mut self, count: u32) {
         self.subscription_canceled_count += count;
-        self.clone()
     }
 
-    pub fn increase_subscription_activated_count(&mut self, count: u32) -> Self {
+    pub fn increase_subscription_activated_count(&mut self, count: u32) {
         self.subscription_activated_count += count;
-        self.clone()
     }
 
-    pub fn push_subscription_event(&mut self, event: &AppEvent) -> Self {
-        let mut new_self = self.clone();
-        new_self.subscription_events.push(event.clone());
-        new_self
+    pub fn push_subscription_event(&mut self, event: &AppEvent) {
+        self.subscription_events.push(event.clone());
     }
 
-    pub fn push_one_time_event(&mut self, event: &AppEvent) -> Self {
-        let mut new_self = self.clone();
-        new_self.one_time_events.push(event.clone());
-        new_self
+    pub fn push_one_time_event(&mut self, event: &AppEvent) {
+        self.one_time_events.push(event.clone());
     }
 
-    pub fn push_installing_event(&mut self, event: &AppEvent) -> Self {
-        let mut new_self = self.clone();
-        new_self.installing_events.push(event.clone());
-        new_self
+    pub fn push_installing_event(&mut self, event: &AppEvent) {
+       self.installing_events.push(event.clone());
     }
     
 }
 
-#[derive(Debug, Clone, Getters, Setters)]
+#[derive(Debug, Clone, Getters, Setters, Serialize, Deserialize)]
 #[getset(get = "pub", set = "pub")]
 pub struct MerchantDataList {
     start_time: Option<NaiveDateTime>,
@@ -146,14 +134,12 @@ impl MerchantDataList {
         }   
     }
 
-    pub fn update_merchant(&mut self, merchant: MerchantData) -> Self {
-        let mut new_self = self.clone();
-        new_self.merchants.insert(merchant.shop_domain().clone(), merchant);
-        new_self
+    pub fn update_merchant(&mut self, merchant: MerchantData) {
+        self.merchants.insert(merchant.shop_domain().clone(), merchant);
     }
 }
 
-#[derive(Debug, Clone, Getters, Setters)]
+#[derive(Debug, Clone, Getters, Setters, Serialize, Deserialize)]
 #[getset(get = "pub", set = "pub")]
 pub struct TotalStats {
     start_time: Option<NaiveDateTime>,
@@ -217,33 +203,29 @@ impl TotalStats {
         }
     }
 
-    pub fn increase_one_time_count (&mut self, count: u32) -> Self {
+    pub fn increase_one_time_count (&mut self, count: u32) {
         self.one_time_count += count;
-        self.clone()
     }
     
-    pub fn increase_one_time_pack_count(&mut self, pack: &PricingUnit, count: u32) -> Result<Self, String> {
+    pub fn increase_one_time_pack_count(&mut self, pack: &PricingUnit, count: u32) -> anyhow::Result<()> {
         if let Some(entry) = self.one_time_details.get_mut(&pack.code) {
             *entry += count;
-            Ok(self.clone())
+            Ok(())
         } else {
-            Err(format!("[TotalStats] One-time pack code {} not found in initialized one-time count stats", pack.code))
+            Err(anyhow!("[TotalStats] One-time pack code {} not found in initialized one-time count stats", pack.code))
         }
     }
 
-    pub fn increase_installed_count(&mut self, count: u32) -> Self {
+    pub fn increase_installed_count(&mut self, count: u32) {
         self.installed_count += count;
-        self.clone()
     }
 
-    pub fn increase_uninstalled_count(&mut self, count: u32) -> Self {
+    pub fn increase_uninstalled_count(&mut self, count: u32) {
         self.uninstalled_count += count;
-        self.clone()
     }
     
-    pub fn increase_store_closed_count(&mut self, count: u32) -> Self {
+    pub fn increase_store_closed_count(&mut self, count: u32) {
         self.store_closed_count += count;
-        self.clone()
     }
 }
 
@@ -271,7 +253,7 @@ pub struct PricingDefs {
     one_times: Vec<PricingUnit>,
 }
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct SubscriptionStatsCounter {
     monthly_counts: HashMap<String, u32>,
     yearly_counts: HashMap<String, u32>,
@@ -294,25 +276,25 @@ impl SubscriptionStatsCounter {
         }
     }
 
-    pub fn increase(&mut self, subscription_plan: &PricingUnit, billing_cycle: &BillingCycle, count: u32) -> Result<Self, String> {
+    pub fn increase(&mut self, subscription_plan: &PricingUnit, billing_cycle: &BillingCycle, count: u32) -> anyhow::Result<()> {
         
         match billing_cycle {
             
             BillingCycle::Monthly => {
                 if let Some(entry) = self.monthly_counts.get_mut(&subscription_plan.code) {
                     *entry += count;
-                    Ok(self.clone())
+                    Ok(())
                 } else {
-                    Err(format!("[SubscriptionStatsCounter] Subscription plan code {} not found in initialized monthly count stats", subscription_plan.code))
+                    Err(anyhow!("[SubscriptionStatsCounter] Subscription plan code {} not found in initialized monthly count stats", subscription_plan.code))
                 }
             }
             
             BillingCycle::Yearly => {
                 if let Some(entry) = self.yearly_counts.get_mut(&subscription_plan.code) {
                     *entry += count;
-                    Ok(self.clone())
+                    Ok(())
                 } else {
-                    Err(format!("[SubscriptionStatsCounter] Subscription plan code {} not found in initialized yearly count stats", subscription_plan.code))
+                    Err(anyhow!("[SubscriptionStatsCounter] Subscription plan code {} not found in initialized yearly count stats", subscription_plan.code))
                 }
             }
 
@@ -322,7 +304,7 @@ impl SubscriptionStatsCounter {
     
 }
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct DetailedSubscriptionStats {
     new_sub: SubscriptionStatsCounter,
     canceled_sub: SubscriptionStatsCounter,
@@ -343,7 +325,7 @@ impl DetailedSubscriptionStats {
     }
 }
 
-#[derive(Debug, Clone, Getters, Setters)]
+#[derive(Debug, Clone, Getters, Setters, Serialize, Deserialize)]
 #[getset(get = "pub", set = "pub")]
 pub struct AppEvent {
     time: Option<NaiveDateTime>,

@@ -45,3 +45,19 @@ pub fn read_excluding_def_from_json(file_path: &str) -> Result<ExcludingDef, Box
 pub fn read_excluding_def_from_json_str(json_str: &str) -> Result<ExcludingDef, serde_json::Error> {
     Ok(serde_json::from_str(json_str)?)
 }
+
+pub fn write_total_stats_to_json(file_path: &str, total_stats: &TotalStats) -> Result<(), Box<dyn std::error::Error>> {
+    let file = std::fs::File::create(file_path)?;
+    let writer = std::io::BufWriter::new(file);
+    
+    serde_json::to_writer_pretty(writer, total_stats)?;
+    Ok(())
+}
+
+pub fn write_merchant_data_to_json(file_path: &str, merchant_data_list: &MerchantDataList) -> Result<(), Box<dyn std::error::Error>> {
+    let file = std::fs::File::create(file_path)?;
+    let writer = std::io::BufWriter::new(file);
+    
+    serde_json::to_writer_pretty(writer, merchant_data_list)?;
+    Ok(())
+}
