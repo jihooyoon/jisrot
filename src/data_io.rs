@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use crate::modal::*;
 use crate::definitions::common::*;
 use std::collections::HashMap;
@@ -46,7 +48,21 @@ pub fn read_excluding_def_from_json_str(json_str: &str) -> Result<ExcludingDef, 
     Ok(serde_json::from_str(json_str)?)
 }
 
-pub fn write_total_stats_to_json(file_path: &str, total_stats: &TotalStats) -> Result<(), Box<dyn std::error::Error>> {
+pub fn write_app_event_list_to_json(file_path: &PathBuf, app_event_list: &Vec<AppEvent>) -> Result<(), Box<dyn std::error::Error>> {
+    if let Some(parent) = file_path.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+    let file = std::fs::File::create(file_path)?;
+    let writer = std::io::BufWriter::new(file);
+    
+    serde_json::to_writer_pretty(writer, app_event_list)?;
+    Ok(())
+}
+
+pub fn write_total_stats_to_json(file_path: &PathBuf, total_stats: &TotalStats) -> Result<(), Box<dyn std::error::Error>> {
+    if let Some(parent) = file_path.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
     let file = std::fs::File::create(file_path)?;
     let writer = std::io::BufWriter::new(file);
     
@@ -54,7 +70,10 @@ pub fn write_total_stats_to_json(file_path: &str, total_stats: &TotalStats) -> R
     Ok(())
 }
 
-pub fn write_merchant_data_to_json(file_path: &str, merchant_data_list: &MerchantDataList) -> Result<(), Box<dyn std::error::Error>> {
+pub fn write_merchant_data_to_json(file_path: &PathBuf, merchant_data_list: &MerchantDataList) -> Result<(), Box<dyn std::error::Error>> {
+    if let Some(parent) = file_path.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
     let file = std::fs::File::create(file_path)?;
     let writer = std::io::BufWriter::new(file);
     

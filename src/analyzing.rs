@@ -12,6 +12,13 @@ pub fn build_merchant_data_and_count_basic_stats (
     let mut merchant_data_list:MerchantDataList = MerchantDataList::new();
     let mut total_stats:TotalStats = TotalStats::new(pricing_defs);
 
+    total_stats.set_start_time(app_event_list.first().unwrap().time().clone());
+    total_stats.set_end_time(app_event_list.last().unwrap().time().clone());
+    merchant_data_list.set_start_time(app_event_list.first().unwrap().time().clone());
+    merchant_data_list.set_end_time(app_event_list.last().unwrap().time().clone());
+    
+    total_stats.build_pretty_time_str();
+
     for event in app_event_list {
         
         //Excluding check

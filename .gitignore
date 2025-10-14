@@ -1,6 +1,7 @@
 # Custom
 drafts/
 .DS_Store/
+output/
 
 # Libs Output
 CONOUT$

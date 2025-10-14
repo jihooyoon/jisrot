@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use chrono::{format, NaiveDate, NaiveDateTime};
+use chrono::{format, NaiveDate, NaiveDateTime, Datelike};
 use crate::definitions::common::*;
 use serde::{Deserialize, Serialize};
 use getset::{Getters, MutGetters, Setters};
@@ -218,6 +218,15 @@ impl TotalStats {
         }
     }
 
+    pub fn build_pretty_time_str(&mut self) {
+        if let Some(t) = self.start_time {
+            self.start_time_str = t.format("%b%d").to_string();
+        }
+        if let Some(t) = self.end_time {
+            self.end_time_str = t.format("%b%d").to_string();
+        }
+    }
+    
     pub fn increase_one_time_count (&mut self, count: u32) {
         self.one_time_count += count;
     }
