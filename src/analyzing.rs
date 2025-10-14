@@ -2,6 +2,7 @@ use crate::modal::*;
 use crate::definitions::common::*;
 use regex::Regex;
 use anyhow::{Result, anyhow};
+use std::collections::HashMap;
 
 pub fn build_merchant_data_and_count_basic_stats (
     app_event_list: &Vec<AppEvent>,
@@ -257,6 +258,25 @@ fn process_merchant_data_and_count_final_stats(
             total_stats.sub_growth() + *total_stats.one_time_count() as i32
         );
 
+        
+        // Calculate subscription growth details
+        let mut calculated_result: HashMap<String, i32> = HashMap::new();
+        
+            // Yearly
+        for (plan, new_count) in total_stats.clone().sub_stats_details().new_sub().yearly_counts() {
+            let canceled_count = total_stats.sub_stats_details().canceled_sub().yearly_counts().get(plan).unwrap_or(&0);
+            calculated_result.insert(plan.to_string(), new_count - canceled_count);
+        }
+        total_stats.sub_stats_details_mut().sub_growth_mut().set_yearly_counts(calculated_result.clone());
+        
+            // Monthly
+        calculated_result.clear();
+        for (plan, new_count) in total_stats.clone().sub_stats_details().new_sub().monthly_counts() {
+            let canceled_count = total_stats.sub_stats_details().canceled_sub().monthly_counts().get(plan).unwrap_or(&0);
+            calculated_result.insert(plan.to_string(), new_count - canceled_count);
+        }
+        total_stats.sub_stats_details_mut().sub_growth_mut().set_monthly_counts(calculated_result.clone());
+    
     }
 
     Ok(())

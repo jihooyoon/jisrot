@@ -284,17 +284,18 @@ pub struct PricingDefs {
     one_times: Vec<PricingUnit>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Setters, Getters, MutGetters, Serialize, Deserialize, Clone)]
+#[getset(get = "pub", get_mut = "pub", set = "pub")]
 pub struct SubscriptionStatsCounter {
-    monthly_counts: HashMap<String, u32>,
-    yearly_counts: HashMap<String, u32>,
+    monthly_counts: HashMap<String, i32>,
+    yearly_counts: HashMap<String, i32>,
 }
 
 impl SubscriptionStatsCounter {
     
     pub fn new(subscription_plan_list: &Vec<PricingUnit>) -> Self {
-        let mut monthly_counts:HashMap<String, u32> = HashMap::new();
-        let mut yearly_counts:HashMap<String, u32> = HashMap::new(); 
+        let mut monthly_counts:HashMap<String, i32> = HashMap::new();
+        let mut yearly_counts:HashMap<String, i32> = HashMap::new(); 
         
         for subscription_plan in subscription_plan_list.iter() {
             monthly_counts.insert(subscription_plan.code.clone(), 0);
@@ -307,7 +308,7 @@ impl SubscriptionStatsCounter {
         }
     }
 
-    pub fn increase(&mut self, subscription_plan: &PricingUnit, billing_cycle: &BillingCycle, count: u32) -> anyhow::Result<()> {
+    pub fn increase(&mut self, subscription_plan: &PricingUnit, billing_cycle: &BillingCycle, count: i32) -> anyhow::Result<()> {
         
         match billing_cycle {
             
