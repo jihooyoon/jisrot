@@ -1,3 +1,5 @@
+#![windows_subsystem = "windows"]
+
 mod definitions;
 mod modal;
 mod data_io;
