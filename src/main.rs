@@ -52,11 +52,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    let (total_stats, merchan_data_list) = analyzing::build_merchant_data_and_count_basic_stats(
+    let (mut total_stats, mut merchant_data_list) = analyzing::build_merchant_data_and_count_basic_stats(
         &app_event_list,
         &pricing_defs,
         &excluding_def
     );
+
+    analyzing::process_merchant_data_and_count_final_stats(&mut total_stats, &mut merchant_data_list, &pricing_defs).expect("Error processing merchant data and counting final stats");
 
     data_io::write_total_stats_to_json("drafts/total_stats.json", &total_stats)?;
     
@@ -77,7 +79,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("Pricing Definitions:\n{:?} \n", pricing_defs);
         println!("========================");
         println!("Writing merchant data to file...");
-        data_io::write_merchant_data_to_json("drafts/merchant_data.json", &merchan_data_list)?;
+        data_io::write_merchant_data_to_json("drafts/merchant_data.json", &merchant_data_list)?;
         println!("Done.");
     }
     Ok(())

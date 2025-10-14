@@ -100,7 +100,7 @@ pub fn build_merchant_data_and_count_basic_stats (
     (total_stats, merchant_data_list)
 }
 
-fn process_merchant_data_and_count_final_stats(
+pub fn process_merchant_data_and_count_final_stats(
     total_stats: &mut TotalStats,
     merchant_data_list: &mut MerchantDataList,
     pricing_defs: &PricingDefs
