@@ -66,7 +66,7 @@ impl eframe::App for QuickGUIApp {
                 file_picker_button(ui, "pricing definitions","Using default (MS Barcode)", &mut self.pricing_defs_file);
                 if ui.button("Analyze").clicked() {
                     if let Some(path) = &self.excluding_defs_file {
-                        match read_excluding_def_from_json(path.to_str().unwrap()) {
+                        match read_excluding_def_from_json(path) {
                             Ok(def) => self.excluding_defs = def,
                             Err(e) => {
                                 rfd::MessageDialog::new()
@@ -79,7 +79,7 @@ impl eframe::App for QuickGUIApp {
                     }
 
                     if let Some(path) =  {&self.pricing_defs_file} {
-                        match read_pricing_def_from_json(path.to_str().unwrap()) {
+                        match read_pricing_def_from_json(path) {
                             Ok(def) => self.pricing_defs = def,
                             Err(e) => {
                                 rfd::MessageDialog::new()
@@ -93,7 +93,7 @@ impl eframe::App for QuickGUIApp {
 
                     match &self.history_data_file {
                         Some(path) => {
-                            match read_events_from_csv(path.to_str().unwrap()) {
+                            match read_events_from_csv(path) {
                                 Ok(events) => {
                                     self.app_event_list = events;
                                     

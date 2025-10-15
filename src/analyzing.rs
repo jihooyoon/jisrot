@@ -1,8 +1,15 @@
-use crate::modal::*;
-use crate::definitions::common::*;
+use anyhow::Error;
 use regex::Regex;
 use anyhow::{Result, anyhow};
 use std::collections::HashMap;
+use std::path::PathBuf;
+
+use crate::data_io::*;
+use crate::definitions::default_ms_pricing_def::*;
+use crate::definitions::default_ms_excluding_def::*;
+use crate::modal::*;
+use crate::definitions::common::*;
+use crate::definitions::strings::*;
 
 pub fn build_merchant_data_and_count_basic_stats (
     app_event_list: &Vec<AppEvent>,
@@ -287,4 +294,77 @@ pub fn process_merchant_data_and_count_final_stats(
     }
 
     Ok(())
+}
+
+pub fn analyze_events_list(
+    event_list: &Vec<AppEvent>, 
+    pricing_defs: &PricingDefs, 
+    excluding_defs: &ExcludingDef) 
+    -> anyhow::Result<(TotalStats, MerchantDataList)> {
+    
+    let (mut total_stats, mut merchant_data) = build_merchant_data_and_count_basic_stats(event_list, pricing_defs, excluding_defs);
+
+    process_merchant_data_and_count_final_stats(&mut total_stats, &mut merchant_data, pricing_defs);
+
+    Ok((total_stats, merchant_data))
+}
+
+pub fn process_from_files_to_files(
+    event_history_file: &PathBuf,
+    pricing_defs_file: Option<&PathBuf>,
+    excluding_def_file: Option<&PathBuf>,
+    out_file_total_stats: &PathBuf,
+    out_file_merchant_data: Option<&PathBuf>,
+    out_file_app_event: Option<&PathBuf>)
+    -> anyhow::Result<(String)> {
+    
+    let event_list: Vec<AppEvent> = read_events_from_csv(event_history_file)?;
+
+    let pricing_defs: PricingDefs;
+    let excluding_defs: ExcludingDef;
+    
+    if let Some(f) = pricing_defs_file {
+        pricing_defs = read_pricing_def_from_json(f)?;
+    } else {
+        pricing_defs = read_pricing_def_from_json_str(SBM_PRICING_DEF_JSON_STRING)?;
+    }
+
+    if let Some(f) = excluding_def_file {
+        excluding_defs = read_excluding_def_from_json(f)?;
+    } else {
+        excluding_defs = read_excluding_def_from_json_str(MS_EXCLUDING_DEF_JSON_STRING)?;
+    }
+    
+    let (total_stats, merchant_data) = analyze_events_list(&event_list, &pricing_defs, &excluding_defs)?;
+
+    let mut message_success: String;
+
+    match write_total_stats_to_json(out_file_total_stats, &total_stats) {
+        Ok(()) => message_success = data::TOTAL_STATS.to_string() 
+                                + success::success::SPECIFIC_DATA_WRITTEN
+                                + out_file_total_stats.display().to_string().as_str(),
+        Err(e) => return Err(e)
+    }
+
+    if let Some(f) = out_file_merchant_data {
+        match write_merchant_data_to_json(f, &merchant_data) {
+            Ok(()) => message_success = message_success 
+                                        + data::MERCHANT_DATA
+                                        + success::success::SPECIFIC_DATA_WRITTEN
+                                        + f.display().to_string().as_str(),
+            Err(e) => return Err(e)
+        }
+    }
+
+    if let Some(f) =  out_file_app_event {
+        match write_app_event_list_to_json(f, &event_list) {
+            Ok(()) => message_success = message_success 
+                                        + data::APP_EVENTS
+                                        + success::success::SPECIFIC_DATA_WRITTEN
+                                        + f.display().to_string().as_str(),
+            Err(e) => return Err(e)
+        }
+    }
+
+    Ok(message_success)
 }
