@@ -40,3 +40,31 @@ pub const SBM_PRICING_DEF_JSON_STRING: &str =
     }
   ]
 }";
+
+pub const OP_PRICING_DEF_JSON_STRING: &str = 
+"{
+  \"subscriptions\": [
+    {
+      \"code\": \"Free\",
+      \"name\": \"Free\",
+      \"regex_pattern\": \"Free\",
+      \"price\": 8.99,
+      \"currency\": \"USD\"
+    },
+    {
+      \"code\": \"Standard\",
+      \"name\": \"Standard\",
+      \"regex_pattern\": \"Standard\",
+      \"price\": 8.99,
+      \"currency\": \"USD\"
+    },
+    {
+      \"code\": \"pro\",
+      \"name\": \"Pro\",
+      \"regex_pattern\": \"pro\",
+      \"price\": 59.99,
+      \"currency\": \"USD\"
+    }
+  ],
+  \"one_times\": []
+}";
