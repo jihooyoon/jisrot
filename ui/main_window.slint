@@ -1,4 +1,4 @@
-import { ComboBox, Button, CheckBox } from "std-widgets.slint";
+import { ComboBox, Button, CheckBox, Palette, CheckBox } from "std-widgets.slint";
 export component MainWindow inherits Window{
 
     title: "Jisrot - Tiny Shopify Events Anal Tools";
@@ -32,6 +32,7 @@ export component MainWindow inherits Window{
                     spacing: 16px;
                     Text {
                         text: "Pricing Definitions:";
+                        color: Palette.alternate-foreground;
                     }
                     Text {
                         text: root.pricing_defs_data_lbl;
@@ -64,6 +65,7 @@ export component MainWindow inherits Window{
                     spacing: 16px;
                     Text {
                         text: "Excluding Definitions:";
+                        color: Palette.alternate-foreground;
                     }
                     Text {
                         text: root.excluding_defs_data_lbl;
@@ -94,7 +96,7 @@ export component MainWindow inherits Window{
         Rectangle {
             width: 100%;
             height: 1px;
-            background: gray;
+            background: Palette.border;
         }
 
 
@@ -107,7 +109,7 @@ export component MainWindow inherits Window{
         Rectangle {
             width: 100%;
             height: 1px;
-            background: gray;
+            background: Palette.border;
         }
 
         HorizontalLayout {
