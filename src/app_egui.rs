@@ -1,16 +1,20 @@
 use std::path::PathBuf;
 
-use eframe::{egui::{CentralPanel, ComboBox, Ui, ViewportBuilder}, get_value, icon_data, run_native, set_value, App, CreationContext, NativeOptions, Storage, APP_KEY};
+use eframe::{egui::{Button, CentralPanel, ComboBox, Ui, ViewportBuilder}, get_value, icon_data, run_native, set_value, App, CreationContext, NativeOptions, Storage, APP_KEY};
+use rfd::FileDialog;
 use serde::{self, Deserialize, Serialize};
 
 use crate::definitions::strings::ui::*;
+use crate::definitions::strings::data::*;
 
 #[derive(Serialize, Deserialize)]
 struct QuickGUIApp {
     debug_mode: bool,
     case_sensitive_regex: bool,
     selected_pricing_defs_option: String,
-    selected_excluding_defs_option: String
+    selected_pricing_defs_file: Option<PathBuf>,
+    selected_excluding_defs_option: String,
+    selected_excluding_defs_file: Option<PathBuf>
 }
 
 impl Default for QuickGUIApp {
@@ -19,7 +23,9 @@ impl Default for QuickGUIApp {
             debug_mode: false,
             case_sensitive_regex: false,
             selected_pricing_defs_option: PRICING_DEFS_OPTION_SBM.value().to_string(),
-            selected_excluding_defs_option: EXCLUDING_DEFS_OPTION_MS.value().to_string()
+            selected_pricing_defs_file: None,
+            selected_excluding_defs_option: EXCLUDING_DEFS_OPTION_MS.value().to_string(),
+            selected_excluding_defs_file: None
         }
     }
 }
@@ -53,26 +59,47 @@ impl App for QuickGUIApp {
     //Called each time UI needs repainting
     fn update(&mut self, ctx: &eframe::egui::Context, frame: &mut eframe::Frame) {
         CentralPanel::default().show(ctx, |ui|{
+            
+            selector_with_file_support(
+            ui, 
+            PRICING_DEFS, 
+            &PRICING_DEFS_OPTION_LIST.to_vec(), 
+            &mut self.selected_pricing_defs_option, 
+            &mut self.selected_pricing_defs_file);
+
 
         });
     }
 
-
 }
+
 
 fn selector_with_file_support(ui: &mut Ui, label: &str, option_list: &Vec<UiOption>, selected_slot: &mut String, file_slot: &mut Option<PathBuf>) {
     ui.vertical(|ui|{
         ui.label(label);
         ui.horizontal(|ui| {
+            
             ComboBox::from_label(label)
-                .selected_text(selected_slot.clone())
-                .show_ui(ui, |ui| {
-                    for option in option_list {
-                        ui.selectable_value(selected_slot, option.value().to_string(), option.text().to_string());
-                    }
-                    ui.selectable_value(selected_slot, OPTION_CUSTOM.value().to_string(), OPTION_CUSTOM.text().to_string());
-                });
+            .selected_text(selected_slot.clone())
+            .show_ui(ui, |ui| {
+                for option in option_list {
+                    ui.selectable_value(selected_slot, option.value().to_string(), option.text().to_string());
+                }
+                ui.selectable_value(selected_slot, OPTION_CUSTOM.value().to_string(), OPTION_CUSTOM.text().to_string());
+            });
+
+            if *selected_slot == OPTION_CUSTOM.value().to_string() 
+            {
+                ui.add_enabled(false, Button::new(BROWSE_BTN_LBL));
+            } else {
+                if ui.button(BROWSE_BTN_LBL).clicked() {
+                    *file_slot = FileDialog::new()
+                                        .add_filter("csv", &["csv"])
+                                        .pick_file();
+                }
+            }
         });
+        
         if let Some(f) = file_slot {
             ui.label(f.file_name().unwrap().display().to_string());
         }

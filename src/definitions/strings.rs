@@ -8,12 +8,17 @@ pub mod data {
     pub const TOTAL_STATS: &str = "Total Stats";
     pub const MERCHANT_DATA: &str = "Merchant Data";
     pub const APP_EVENTS: &str = "App Event List";
+    pub const PRICING_DEFS: &str = "Pricing definitions";
+    pub const EXCLUDING_DEFS: &str = "Excluding definitions";
 }
 
 pub mod ui {
+    pub const BROWSE_BTN_LBL: &str = "Browse...";
+    pub const ANALYZE_BTN_LBL: &str = "Analyze!";
+    
     use getset::Getters;
 
-    #[derive(Getters)]
+    #[derive(Getters, Clone)]
     #[getset(get="pub")]
     pub struct UiOption <'a> {
         pub value: &'a str,
