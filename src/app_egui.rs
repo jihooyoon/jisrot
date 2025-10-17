@@ -88,7 +88,7 @@ fn selector_with_file_support(ui: &mut Ui, label: &str, option_list: &Vec<UiOpti
                 ui.selectable_value(selected_slot, OPTION_CUSTOM.value().to_string(), OPTION_CUSTOM.text().to_string());
             });
 
-            if *selected_slot == OPTION_CUSTOM.value().to_string() 
+            if *selected_slot != OPTION_CUSTOM.value().to_string() 
             {
                 ui.add_enabled(false, Button::new(BROWSE_BTN_LBL));
             } else {
