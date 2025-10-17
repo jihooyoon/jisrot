@@ -3,11 +3,14 @@ use std::path::PathBuf;
 use eframe::{egui::{CentralPanel, ComboBox, Ui, ViewportBuilder}, get_value, icon_data, run_native, set_value, App, CreationContext, NativeOptions, Storage, APP_KEY};
 use serde::{self, Deserialize, Serialize};
 
+use crate::definitions::strings::ui::*;
+
 #[derive(Serialize, Deserialize)]
 struct QuickGUIApp {
     debug_mode: bool,
     case_sensitive_regex: bool,
-    
+    selected_pricing_defs_option: String,
+    selected_excluding_defs_option: String
 }
 
 impl Default for QuickGUIApp {
@@ -15,6 +18,8 @@ impl Default for QuickGUIApp {
         Self {
             debug_mode: false,
             case_sensitive_regex: false,
+            selected_pricing_defs_option: PRICING_DEFS_OPTION_SBM.value().to_string(),
+            selected_excluding_defs_option: EXCLUDING_DEFS_OPTION_MS.value().to_string()
         }
     }
 }
@@ -55,17 +60,17 @@ impl App for QuickGUIApp {
 
 }
 
-fn selector_with_file_support(ui: &mut Ui, label: &str, option_list: &Vec<&str>, selected_slot: &mut String, file_slot: &mut Option<PathBuf>) {
+fn selector_with_file_support(ui: &mut Ui, label: &str, option_list: &Vec<UiOption>, selected_slot: &mut String, file_slot: &mut Option<PathBuf>) {
     ui.vertical(|ui|{
         ui.label(label);
         ui.horizontal(|ui| {
             ComboBox::from_label(label)
-                .selected_text(selected_slot)
+                .selected_text(selected_slot.clone())
                 .show_ui(ui, |ui| {
                     for option in option_list {
-                        ui.selectable_value(selected_slot, option.to_string(), option.to_string());
+                        ui.selectable_value(selected_slot, option.value().to_string(), option.text().to_string());
                     }
-                    ui.selectable_value(current_value, selected_value, text)
+                    ui.selectable_value(selected_slot, OPTION_CUSTOM.value().to_string(), OPTION_CUSTOM.text().to_string());
                 });
         });
         if let Some(f) = file_slot {
