@@ -312,7 +312,7 @@ pub fn analyze_events_list(
 pub fn process_from_files_to_files(
     event_history_file: &PathBuf,
     pricing_defs_file: Option<&PathBuf>,
-    excluding_def_file: Option<&PathBuf>,
+    excluding_defs_file: Option<&PathBuf>,
     out_file_total_stats: &PathBuf,
     out_file_merchant_data: Option<&PathBuf>,
     out_file_app_event: Option<&PathBuf>)
@@ -329,7 +329,7 @@ pub fn process_from_files_to_files(
         pricing_defs = read_pricing_def_from_json_str(SBM_PRICING_DEF_JSON_STRING)?;
     }
 
-    if let Some(f) = excluding_def_file {
+    if let Some(f) = excluding_defs_file {
         excluding_defs = read_excluding_def_from_json(f)?;
     } else {
         excluding_defs = read_excluding_def_from_json_str(MS_EXCLUDING_DEF_JSON_STRING)?;

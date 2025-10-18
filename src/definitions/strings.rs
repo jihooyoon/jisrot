@@ -13,8 +13,17 @@ pub mod data {
 }
 
 pub mod ui {
-    pub const BROWSE_BTN_LBL: &str = "Browse...";
-    pub const ANALYZE_BTN_LBL: &str = "Analyze!";
+    pub const BTN_BROWSE_LBL: &str = "Browse...";
+    pub const BTN_ANALYZE_LBL: &str = "Analyze!";
+    pub const BTN_EVENT_FILE_PICKER_LBL: &str = "Browse event history file...";
+
+    pub const DEFAULT_SELECTOR_TEXT: &str = "- Please select -";
+    
+    pub const SELECTOR_PRICING_DEFS_ID: &str = "selector_pricing_defs";
+    pub const SELECTOR_EXCLUDING_DEFS_ID: &str = "selector_excluding_defs";
+
+    pub const CHECKBOX_DEBUG_MODE_LBL: &str = "Debug mode";
+    pub const CHECKBOX_CASE_SENSITIVE_REGEX_LBL: &str = "Case-sensitive regex";
     
     use getset::Getters;
 
@@ -26,8 +35,8 @@ pub mod ui {
     }
 
     pub const EXCLUDING_DEFS_OPTION_MS: UiOption = UiOption {
-        value: "sbm",
-        text: "MS Barcode"
+        value: "magestore",
+        text: "Magestore"
     };
 
     pub const PRICING_DEFS_OPTION_SBM: UiOption = UiOption {
