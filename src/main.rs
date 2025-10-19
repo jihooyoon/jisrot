@@ -1,7 +1,7 @@
 #![windows_subsystem = "windows"]
 
 mod definitions;
-mod modal;
+mod modals;
 mod data_io;
 mod analyzing;
 mod app_egui;

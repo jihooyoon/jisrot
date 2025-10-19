@@ -1,5 +1,4 @@
-pub const SBM_PRICING_DEF_JSON_STRING: &str = 
-"{
+pub const SBM_PRICING_DEF_JSON_STRING: &str = "{
   \"subscriptions\": [
     {
       \"code\": \"standard\",
@@ -41,8 +40,7 @@ pub const SBM_PRICING_DEF_JSON_STRING: &str =
   ]
 }";
 
-pub const OP_PRICING_DEF_JSON_STRING: &str = 
-"{
+pub const SPOP_PRICING_DEF_JSON_STRING: &str = "{
   \"subscriptions\": [
     {
       \"code\": \"Free\",

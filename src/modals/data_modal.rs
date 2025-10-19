@@ -1,9 +1,9 @@
-use std::collections::HashMap;
-use chrono::{format, NaiveDate, NaiveDateTime, Datelike};
 use crate::definitions::common::*;
-use serde::{Deserialize, Serialize};
-use getset::{Getters, MutGetters, Setters};
 use anyhow::{Result, anyhow};
+use chrono::{NaiveDate, NaiveDateTime};
+use getset::{Getters, MutGetters, Setters};
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum BillingCycle {
@@ -20,24 +20,24 @@ pub struct MerchantData {
     uninstalled_count: u32,
     store_closed_count: u32,
     store_reopened_count: u32,
-    
+
     #[getset(get = "pub", set = "")]
     installing_events: Vec<AppEvent>,
-    
+
     subscription_activated_count: u32,
     subscription_canceled_count: u32,
-    
+
     #[getset(get = "pub", set = "")]
     subscription_events: Vec<AppEvent>,
-    
+
     one_time_count: u32,
-    
+
     #[getset(skip)]
     one_time_details: HashMap<String, u32>,
-    
+
     #[getset(skip)]
     one_time_events: Vec<AppEvent>,
-    
+
     installed_status: String,
     subscription_status: String,
     last_new_sub_plan: Option<PricingUnit>,
@@ -47,11 +47,9 @@ pub struct MerchantData {
 }
 
 impl MerchantData {
-    
     pub fn new(shop_domain: &String, one_time_packs: &Vec<PricingUnit>) -> Self {
-        
         let mut one_time_details: HashMap<String, u32> = HashMap::new();
-        
+
         for pack in one_time_packs.iter() {
             one_time_details.insert(pack.code.clone(), 0);
         }
@@ -79,16 +77,23 @@ impl MerchantData {
         }
     }
 
-    pub fn increase_one_time_count(&mut self, count: u32)  {
+    pub fn increase_one_time_count(&mut self, count: u32) {
         self.one_time_count += count;
     }
-    
-    pub fn increase_one_time_pack_count(&mut self, pack: &PricingUnit, count: u32) -> anyhow::Result<()> {
+
+    pub fn increase_one_time_pack_count(
+        &mut self,
+        pack: &PricingUnit,
+        count: u32,
+    ) -> anyhow::Result<()> {
         if let Some(entry) = self.one_time_details.get_mut(&pack.code) {
             *entry += count;
             Ok(())
         } else {
-            Err(anyhow!("[Merchant Data] One-time pack code {} not found in initialized one-time count stats", pack.code))
+            Err(anyhow!(
+                "[Merchant Data] One-time pack code {} not found in initialized one-time count stats",
+                pack.code
+            ))
         }
     }
 
@@ -125,9 +130,8 @@ impl MerchantData {
     }
 
     pub fn push_installing_event(&mut self, event: &AppEvent) {
-       self.installing_events.push(event.clone());
+        self.installing_events.push(event.clone());
     }
-    
 }
 
 #[derive(Debug, Clone, Getters, MutGetters, Setters, Serialize, Deserialize)]
@@ -135,7 +139,7 @@ impl MerchantData {
 pub struct MerchantDataList {
     start_time: Option<NaiveDateTime>,
     end_time: Option<NaiveDateTime>,
-    
+
     #[getset(get = "pub", get_mut = "pub", set = "")]
     merchants: HashMap<String, MerchantData>,
 }
@@ -146,11 +150,12 @@ impl MerchantDataList {
             start_time: None,
             end_time: None,
             merchants: HashMap::new(),
-        }   
+        }
     }
 
     pub fn update_merchant(&mut self, merchant: MerchantData) {
-        self.merchants.insert(merchant.shop_domain().clone(), merchant);
+        self.merchants
+            .insert(merchant.shop_domain().clone(), merchant);
     }
 }
 
@@ -161,36 +166,35 @@ pub struct TotalStats {
     end_time: Option<NaiveDateTime>,
     start_time_str: String,
     end_time_str: String,
-    
+
     installed_count: u32,
     uninstalled_count: u32,
     old_uninstalled_count: u32,
     total_churn_rate: f64,
     churn_rate: f64,
     merchant_growth: i32,
-    
+
     store_closed_count: u32,
     store_reopened_count: u32,
-    
+
     one_time_count: u32,
-    
+
     #[getset(skip)]
     one_time_details: HashMap<String, u32>,
 
     new_sub_count: u32,
     canceled_sub_count: u32,
     sub_growth: i32,
-    
+
     sub_stats_details: DetailedSubscriptionStats,
-    
-    paid_growth: i32
+
+    paid_growth: i32,
 }
 
 impl TotalStats {
     pub fn new(pricing_defs: &PricingDefs) -> Self {
-        
         let mut one_time_details: HashMap<String, u32> = HashMap::new();
-        
+
         for pack in pricing_defs.one_times.iter() {
             one_time_details.insert(pack.code.clone(), 0);
         }
@@ -214,7 +218,7 @@ impl TotalStats {
             canceled_sub_count: 0,
             sub_growth: 0,
             sub_stats_details: DetailedSubscriptionStats::new(&pricing_defs.subscriptions),
-            paid_growth: 0
+            paid_growth: 0,
         }
     }
 
@@ -226,17 +230,24 @@ impl TotalStats {
             self.end_time_str = t.format("%b%d").to_string();
         }
     }
-    
-    pub fn increase_one_time_count (&mut self, count: u32) {
+
+    pub fn increase_one_time_count(&mut self, count: u32) {
         self.one_time_count += count;
     }
-    
-    pub fn increase_one_time_pack_count(&mut self, pack: &PricingUnit, count: u32) -> anyhow::Result<()> {
+
+    pub fn increase_one_time_pack_count(
+        &mut self,
+        pack: &PricingUnit,
+        count: u32,
+    ) -> anyhow::Result<()> {
         if let Some(entry) = self.one_time_details.get_mut(&pack.code) {
             *entry += count;
             Ok(())
         } else {
-            Err(anyhow!("[TotalStats] One-time pack code {} not found in initialized one-time count stats", pack.code))
+            Err(anyhow!(
+                "[TotalStats] One-time pack code {} not found in initialized one-time count stats",
+                pack.code
+            ))
         }
     }
 
@@ -251,7 +262,7 @@ impl TotalStats {
     pub fn increase_old_uninstalled_count(&mut self, count: u32) {
         self.old_uninstalled_count += count;
     }
-    
+
     pub fn increase_store_closed_count(&mut self, count: u32) {
         self.store_closed_count += count;
     }
@@ -273,7 +284,7 @@ impl TotalStats {
 #[getset(get = "pub", set = "pub")]
 pub struct ExcludingDef {
     excluding_field: String,
-    excluding_pattern: String
+    excluding_pattern: String,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Getters, Setters)]
@@ -301,48 +312,53 @@ pub struct SubscriptionStatsCounter {
 }
 
 impl SubscriptionStatsCounter {
-    
     pub fn new(subscription_plan_list: &Vec<PricingUnit>) -> Self {
-        let mut monthly_counts:HashMap<String, i32> = HashMap::new();
-        let mut yearly_counts:HashMap<String, i32> = HashMap::new(); 
-        
+        let mut monthly_counts: HashMap<String, i32> = HashMap::new();
+        let mut yearly_counts: HashMap<String, i32> = HashMap::new();
+
         for subscription_plan in subscription_plan_list.iter() {
             monthly_counts.insert(subscription_plan.code.clone(), 0);
             yearly_counts.insert(subscription_plan.code.clone(), 0);
         }
 
         Self {
-            monthly_counts:monthly_counts,
-            yearly_counts:yearly_counts
+            monthly_counts: monthly_counts,
+            yearly_counts: yearly_counts,
         }
     }
 
-    pub fn increase(&mut self, subscription_plan: &PricingUnit, billing_cycle: &BillingCycle, count: i32) -> anyhow::Result<()> {
-        
+    pub fn increase(
+        &mut self,
+        subscription_plan: &PricingUnit,
+        billing_cycle: &BillingCycle,
+        count: i32,
+    ) -> anyhow::Result<()> {
         match billing_cycle {
-            
             BillingCycle::Monthly => {
                 if let Some(entry) = self.monthly_counts.get_mut(&subscription_plan.code) {
                     *entry += count;
                     Ok(())
                 } else {
-                    Err(anyhow!("[SubscriptionStatsCounter] Subscription plan code {} not found in initialized monthly count stats", subscription_plan.code))
+                    Err(anyhow!(
+                        "[SubscriptionStatsCounter] Subscription plan code {} not found in initialized monthly count stats",
+                        subscription_plan.code
+                    ))
                 }
             }
-            
+
             BillingCycle::Yearly => {
                 if let Some(entry) = self.yearly_counts.get_mut(&subscription_plan.code) {
                     *entry += count;
                     Ok(())
                 } else {
-                    Err(anyhow!("[SubscriptionStatsCounter] Subscription plan code {} not found in initialized yearly count stats", subscription_plan.code))
+                    Err(anyhow!(
+                        "[SubscriptionStatsCounter] Subscription plan code {} not found in initialized yearly count stats",
+                        subscription_plan.code
+                    ))
                 }
             }
-
         }
-
     }
-    
 }
 
 #[derive(Debug, Getters, MutGetters, Setters, Serialize, Deserialize, Clone)]
@@ -352,7 +368,7 @@ pub struct DetailedSubscriptionStats {
     canceled_sub: SubscriptionStatsCounter,
     sub_growth: SubscriptionStatsCounter,
     all_new_sub: SubscriptionStatsCounter,
-    all_canceled_sub: SubscriptionStatsCounter
+    all_canceled_sub: SubscriptionStatsCounter,
 }
 
 impl DetailedSubscriptionStats {
@@ -378,11 +394,10 @@ pub struct AppEvent {
     shop_country: String,
     shop_email: String,
     shop_domain: String,
-    key: String    
+    key: String,
 }
 
-impl AppEvent  {
-    
+impl AppEvent {
     pub fn new() -> Self {
         AppEvent {
             time: None,
@@ -397,13 +412,15 @@ impl AppEvent  {
         }
     }
 
-    fn parse_time(data_hash: &HashMap<String, String>, data_field: &str, pattern: &str) -> Result<NaiveDateTime, String> {
+    fn parse_time(
+        data_hash: &HashMap<String, String>,
+        data_field: &str,
+        pattern: &str,
+    ) -> Result<NaiveDateTime, String> {
         if let Some(time_string) = data_hash.get(data_field) {
-            
             match NaiveDateTime::parse_from_str(time_string.as_str(), pattern) {
-                
                 Ok(date_time) => Ok(date_time),
-                
+
                 Err(e) => {
                     eprintln!("Date Time Parse error: {:?}\n Trying parse Date only...", e);
                     match NaiveDate::parse_from_str(time_string.as_str(), pattern) {
@@ -411,29 +428,31 @@ impl AppEvent  {
                             if let Some(date_time_fk) = date.and_hms_opt(0, 0, 0) {
                                 Ok(date_time_fk)
                             } else {
-                                Err(format!("Invalid date format for field {}: {}", data_field, time_string))
+                                Err(format!(
+                                    "Invalid date format for field {}: {}",
+                                    data_field, time_string
+                                ))
                             }
-                        },
+                        }
                         Err(e) => {
                             eprintln!("Date Parse error: {:?}", e);
-                            Err(format!("Invalid date format for field {}: {}", data_field, time_string))
+                            Err(format!(
+                                "Invalid date format for field {}: {}",
+                                data_field, time_string
+                            ))
                         }
-                        
                     }
                 }
-
             }
-
         } else {
             return Err(format!("Missing required field: {}", data_field));
         }
     }
 
-
     pub fn from_hashmap(hashmap: &HashMap<String, String>) -> Result<Self, String> {
         let mut time = None;
         let mut billing_on = None;
-        
+
         match Self::parse_time(hashmap, TIME_FIELD, EVENT_TIME_PATTERN) {
             Ok(date_time) => time = Some(date_time),
             Err(e) => println!("Warning: {}", e),
@@ -456,5 +475,4 @@ impl AppEvent  {
             key: hashmap.get(KEY_FIELD).cloned().unwrap_or_default(),
         })
     }
-
 }
