@@ -374,8 +374,8 @@ pub fn analyze_file(
     excluding_defs: &ExcludingDef,
     out_folder: &PathBuf,
     out_file_total_stats_pref: &str,
-    out_file_merchant_data_pref: Option<&str>,
-    out_file_app_events_pref: Option<&str>,
+    out_file_merchant_data_pref: &Option<String>,
+    out_file_app_events_pref: &Option<String>,
 ) -> anyhow::Result<String> {
     let event_list: Vec<AppEvent> = read_events_from_csv(event_history_file)?;
 
@@ -443,8 +443,8 @@ pub fn analyze_from_gui(
     event_history_file_list: &Option<Vec<PathBuf>>,
     selected_pricing_defs: &UiOption,
     selected_excluding_defs: &UiOption,
-    pricing_defs_file: &Option<&PathBuf>,
-    excluding_defs_file: &Option<&PathBuf>,
+    pricing_defs_file: Option<&PathBuf>,
+    excluding_defs_file: Option<&PathBuf>,
     debug_mode: bool,
     case_sensitive_regex: bool,
 ) -> anyhow::Result<String> {
@@ -488,9 +488,59 @@ pub fn analyze_from_gui(
     };
 
     if let Some(f_list) = event_history_file_list {
-        let error_message: String = String::from("");
+        let out_folder: PathBuf = std::env::current_dir()?;
+        let mut final_error_message: String = String::from("");
+        let mut final_success_message: String =
+            data::TOTAL_STATS.to_string() + message::success::SPECIFIC_DATA_WRITTEN + "\n";
 
-        for f in f_list {}
+        let out_file_total_stats_pref: String = data::TOTAL_STATS
+            .to_string()
+            .replace(" ", "_")
+            .to_lowercase();
+
+        let mut out_file_merchant_data_pref: Option<String> = None;
+        let mut out_file_app_events_pref: Option<String> = None;
+
+        if debug_mode {
+            final_success_message = final_success_message
+                + data::MERCHANT_DATA
+                + message::success::SPECIFIC_DATA_WRITTEN
+                + "\n"
+                + data::APP_EVENTS
+                + message::success::SPECIFIC_DATA_WRITTEN;
+
+            out_file_merchant_data_pref = Some(
+                data::MERCHANT_DATA
+                    .to_string()
+                    .replace(" ", "_")
+                    .to_lowercase(),
+            );
+
+            out_file_app_events_pref = Some(
+                data::APP_EVENTS
+                    .to_string()
+                    .replace(" ", "_")
+                    .to_lowercase(),
+            );
+        }
+
+        for f in f_list {
+            if let Err(e) = analyze_file(
+                f,
+                &pricing_defs,
+                &excluding_defs,
+                &out_folder,
+                &out_file_total_stats_pref,
+                &out_file_merchant_data_pref,
+                &out_file_app_events_pref,
+            ) {
+                final_error_message += e.to_string().as_str();
+            }
+        }
+
+        if final_error_message != "" {
+            return Err(anyhow!(final_error_message));
+        }
     } else {
         return Err(anyhow!(
             "{}",
