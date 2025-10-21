@@ -391,7 +391,7 @@ fn analyze_details(
 }
 
 /// Analyze event list and return final data
-pub fn analyze_events_list(
+fn analyze_events_list(
     event_list: &Vec<AppEvent>,
     pricing_defs: &PricingDefs,
     excluding_defs: &ExcludingDef,
