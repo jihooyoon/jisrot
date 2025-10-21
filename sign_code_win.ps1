@@ -40,10 +40,10 @@ if (!(Test-Path $exePath)) {
 
 Write-Host "=== Signing $exePath ==="
 # Bạn có thể dùng /n "$displayName" nếu cert đã trong store
-signtool sign /f $pfxPath /p (ConvertFrom-SecureString $pfxPassword -AsPlainText) /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 $exePath
+./signtool sign /f $pfxPath /p (ConvertFrom-SecureString $pfxPassword -AsPlainText) /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 $exePath
 
 # --- Verify ---
-signtool verify /pa /v $exePath
+./signtool verify /pa /v $exePath
 Write-Host "=== Done! ==="
 
 Write-Host "Next steps:"
