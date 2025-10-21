@@ -1,15 +1,14 @@
 #![windows_subsystem = "windows"]
 
-mod definitions;
-mod modals;
-mod data_io;
 mod analyzing;
 mod app_egui;
+mod data_io;
+mod definitions;
+mod modals;
 
 use std::env::args;
 
 use anyhow::{Result, anyhow};
-
 
 fn main() -> anyhow::Result<()> {
     let args: Vec<String> = args().collect();
