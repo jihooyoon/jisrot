@@ -22,8 +22,8 @@ $thumb = $cert.Thumbprint
 Write-Host "Certificate created with thumbprint: $thumb"
 
 # --- Export files ---
-$pfxPath = "$PWD\jihooyoon_signing.pfx"
-$cerPath = "$PWD\jihooyoon_cert.cer"
+$pfxPath = "$PWD\target\release\jihooyoon_signing.pfx"
+$cerPath = "$PWD\target\release\jihooyoon_cert.cer"
 
 Export-PfxCertificate -Cert "Cert:\CurrentUser\My\$thumb" -FilePath $pfxPath -Password $pfxPassword | Out-Null
 Export-Certificate -Cert "Cert:\CurrentUser\My\$thumb" -FilePath $cerPath | Out-Null
