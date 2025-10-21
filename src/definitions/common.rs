@@ -15,11 +15,11 @@ pub const STORE_REOPENED_STRING: &str = "Store re-opened";
 
 pub const UNINSTALLED_OLD_STRING: &str = "UninstalledOld";
 
-pub const ONE_TIME_STRING: &str = "One-time";
+// pub const ONE_TIME_STRING: &str = "One-time";
 
 pub const SUBSCRIPTION_STATUS_CANCELED: &str = "Canceled";
 pub const SUBSCRIPTION_STATUS_ACTIVE: &str = "Active";
-pub const SUBSCRIPTION_STATUS_CHANGED: &str = "Changed";
+// pub const SUBSCRIPTION_STATUS_CHANGED: &str = "Changed";
 
 pub const EVENT_FIELD: &str = "Event";
 pub const DETAILS_FIELD: &str = "Details";
@@ -35,7 +35,7 @@ pub const NONE: &str = "None";
 pub const EVENT_TIME_PATTERN: &str = "%Y-%m-%d %H:%M:%S UTC";
 pub const BILLING_ON_PATTERN: &str = "%Y-%m-%d";
 
-pub const PAID_TYPE_FIELD_SUBSCRIPTIONS: &str = "subscriptions";
-pub const PAID_TYPE_FIELD_ONE_TIME: &str = "one_times";
+// pub const PAID_TYPE_FIELD_SUBSCRIPTIONS: &str = "subscriptions";
+// pub const PAID_TYPE_FIELD_ONE_TIME: &str = "one_times";
 
 pub const YEARLY_PATTERN: &str = "Year";

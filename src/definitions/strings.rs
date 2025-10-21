@@ -1,10 +1,10 @@
 pub mod message {
     pub mod success {
-        pub const TITLE: &str = "Success";
+        pub const _TITLE: &str = "Success";
         pub const SPECIFIC_DATA_WRITTEN_FILE: &str = "is written to file";
     }
     pub mod error {
-        pub const TITLE: &str = "Error";
+        pub const _TITLE: &str = "Error";
         pub const FILE_NOT_CHOSEN: &str = "File not chosen";
     }
 }
@@ -12,7 +12,7 @@ pub mod message {
 pub mod data {
     pub const OUT_FOLDER_NAME: &str = "Output";
 
-    pub const KIND_PREDEFINED: &str = "Pre-defined";
+    pub const _KIND_PREDEFINED: &str = "Pre-defined";
     pub const KIND_CUSTOM: &str = "Custom";
     pub const TOTAL_STATS: &str = "Total Stats";
     pub const MERCHANT_DATA: &str = "Merchant Data";
@@ -36,7 +36,7 @@ pub mod ui {
     pub const BTN_ANALYZE_LBL: &str = "Analyze!";
     pub const BTN_EVENT_FILE_PICKER_LBL: &str = "Browse event history file...";
 
-    pub const DEFAULT_SELECTOR_TEXT: &str = "- Please select -";
+    pub const _DEFAULT_SELECTOR_TEXT: &str = "- Please select -";
 
     pub const SELECTOR_PRICING_DEFS_ID: &str = "selector_pricing_defs";
     pub const SELECTOR_EXCLUDING_DEFS_ID: &str = "selector_excluding_defs";

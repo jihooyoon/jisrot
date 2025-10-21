@@ -2,14 +2,13 @@ use std::path::PathBuf;
 
 use eframe::{
     APP_KEY, App, CreationContext, NativeOptions, Storage,
-    egui::{Button, CentralPanel, ComboBox, Ui, ViewportBuilder},
-    epaint::tessellator::Path,
+    egui::{Button, CentralPanel, ComboBox, Ui, ViewportBuilder, pos2},
     get_value, icon_data, run_native, set_value,
 };
 use rfd::FileDialog;
 use serde::{self, Deserialize, Serialize};
 
-use crate::definitions::strings::{message, ui::*};
+use crate::definitions::strings::ui::*;
 use crate::models::ui_model::*;
 use crate::{analyzing::analyze_from_gui, definitions::strings::data::*};
 
@@ -65,11 +64,9 @@ impl App for QuickGUIApp {
     }
 
     //Called each time UI needs repainting
-    fn update(&mut self, ctx: &eframe::egui::Context, frame: &mut eframe::Frame) {
+    fn update(&mut self, ctx: &eframe::egui::Context, _frame: &mut eframe::Frame) {
         CentralPanel::default().show(ctx, |ui| {
             ui.horizontal(|ui| {
-                let text_pricing = self.selected_pricing_defs_option.clone();
-                let text_excluding = self.selected_excluding_defs_option.clone();
                 selector_with_file_support(
                     ui,
                     PRICING_DEFS,
@@ -191,11 +188,16 @@ fn selector_with_file_support(
 pub fn run(reset_default: bool) -> eframe::Result<()> {
     let native_options = NativeOptions {
         viewport: ViewportBuilder::default()
-            .with_inner_size([400.0, 300.0])
-            .with_min_inner_size([300.0, 300.0]), /*.with_icon( ///Load app icon
-                                                      icon_data::from_png_bytes(&include_bytes!("../res/icons/icons-256.png")[..])
-                                                          .expect("Failed to load icon")
-                                                  )*/
+            .with_position(pos2(400.0, 200.0))
+            .with_inner_size([400.0, 120.0])
+            .with_max_inner_size([400.0, 120.0])
+            .with_min_inner_size([400.0, 120.0])
+            .with_resizable(false)
+            .with_icon(
+                icon_data::from_png_bytes(&include_bytes!("../ass/icon/icon256.png")[..])
+                    .expect("Failed to load icon"),
+            ),
+        persist_window: false,
         ..Default::default()
     };
 

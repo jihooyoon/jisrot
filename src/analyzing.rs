@@ -1,38 +1,36 @@
-use anyhow::Error;
-use anyhow::{Result, anyhow};
-use eframe::epaint::tessellator::Path;
+use anyhow::anyhow;
 use indexmap::IndexMap;
 use regex::Regex;
-use serde::de::value;
 use std::path::PathBuf;
 
 use crate::data_io::*;
 use crate::definitions::common::*;
-use crate::definitions::default_ms_excluding_def::*;
-use crate::definitions::default_ms_pricing_def::*;
-
 use crate::definitions::strings::*;
 use crate::models::data_model::*;
-use crate::models::ui_model::UiOption;
+use crate::models::ui_model::*;
 
-pub fn build_merchant_data_and_count_basic_stats(
+/// Build base data from app event list
+/// Base data include:
+/// - All installing related data (install, uninstall, store-closed, churn rate,...)
+/// - One-time data
+fn build_base_data(
     app_event_list: &Vec<AppEvent>,
     pricing_defs: &PricingDefs,
     excluding_def: &ExcludingDef,
     case_sensitive_regex: bool,
-) -> (TotalStats, MerchantDataList) {
-    let mut merchant_data_list: MerchantDataList = MerchantDataList::new();
+) -> (TotalStats, MerchantList) {
+    let mut merchant_list: MerchantList = MerchantList::new();
     let mut total_stats: TotalStats = TotalStats::new(pricing_defs);
 
     total_stats.set_start_time(app_event_list.first().unwrap().time().clone());
     total_stats.set_end_time(app_event_list.last().unwrap().time().clone());
-    merchant_data_list.set_start_time(app_event_list.first().unwrap().time().clone());
-    merchant_data_list.set_end_time(app_event_list.last().unwrap().time().clone());
+    merchant_list.set_start_time(app_event_list.first().unwrap().time().clone());
+    merchant_list.set_end_time(app_event_list.last().unwrap().time().clone());
 
     total_stats.build_pretty_time_str();
 
     for event in app_event_list {
-        //Excluding check
+        // Excluding check
         let mut re = if case_sensitive_regex {
             Regex::new(excluding_def.excluding_pattern()).unwrap()
         } else {
@@ -46,61 +44,62 @@ pub fn build_merchant_data_and_count_basic_stats(
             continue;
         }
 
-        let mut current_merchant_data = if merchant_data_list
+        // If merchant in this event existed in merchant list, clone to edit; else create new
+        let mut current_merchant = if merchant_list
             .merchants()
             .contains_key(event.shop_domain().as_str())
         {
-            merchant_data_list
+            merchant_list
                 .merchants()
                 .get(event.shop_domain().as_str())
                 .unwrap()
                 .clone()
         } else {
-            MerchantData::new(&event.shop_domain(), pricing_defs.one_times())
+            Merchant::new(&event.shop_domain(), pricing_defs.one_times())
         };
 
-        //Count Install, Uninstall, Store closed
+        // Count Install, Uninstall, Store closed
         re = Regex::new(INSTALLED_STRING).unwrap();
         if re.is_match(event.event().as_str()) {
             total_stats.increase_installed_count(1);
-            current_merchant_data.increase_installed_count(1);
-            current_merchant_data.push_installing_event(event);
-            merchant_data_list.update_merchant(current_merchant_data);
+            current_merchant.increase_installed_count(1);
+            current_merchant.push_installing_event(event);
+            merchant_list.update_merchant(current_merchant);
             continue;
         }
 
         re = Regex::new(UNINSTALLED_STRING).unwrap();
         if re.is_match(event.event().as_str()) {
             total_stats.increase_uninstalled_count(1);
-            current_merchant_data.increase_uninstalled_count(1);
-            current_merchant_data.push_installing_event(event);
-            merchant_data_list.update_merchant(current_merchant_data);
+            current_merchant.increase_uninstalled_count(1);
+            current_merchant.push_installing_event(event);
+            merchant_list.update_merchant(current_merchant);
             continue;
         }
 
         re = Regex::new(STORE_CLOSED_STRING).unwrap();
         if re.is_match(event.event().as_str()) {
             total_stats.increase_store_closed_count(1);
-            current_merchant_data.increase_store_closed_count(1);
-            current_merchant_data.push_installing_event(event);
-            merchant_data_list.update_merchant(current_merchant_data);
+            current_merchant.increase_store_closed_count(1);
+            current_merchant.push_installing_event(event);
+            merchant_list.update_merchant(current_merchant);
             continue;
         }
 
         re = Regex::new(STORE_REOPENED_STRING).unwrap();
         if re.is_match(event.event().as_str()) {
             total_stats.increase_store_reopened_count(1);
-            current_merchant_data.increase_store_reopened_count(1);
-            current_merchant_data.push_installing_event(event);
-            merchant_data_list.update_merchant(current_merchant_data);
+            current_merchant.increase_store_reopened_count(1);
+            current_merchant.push_installing_event(event);
+            merchant_list.update_merchant(current_merchant);
             continue;
         }
 
-        // Count One-Time
+        //  Count One-Time
         if ONE_TIME_ACTIVATED_STRINGS.contains(&event.event().as_str()) {
             total_stats.increase_one_time_count(1);
-            current_merchant_data.increase_one_time_count(1);
-            current_merchant_data.push_one_time_event(event);
+            current_merchant.increase_one_time_count(1);
+            current_merchant.push_one_time_event(event);
 
             for pack in pricing_defs.one_times() {
                 re = if case_sensitive_regex {
@@ -114,41 +113,35 @@ pub fn build_merchant_data_and_count_basic_stats(
                         && re.is_match(event.details().to_lowercase().as_str()))
                 {
                     total_stats.increase_one_time_pack_count(pack, 1).unwrap();
-                    current_merchant_data
+                    current_merchant
                         .increase_one_time_pack_count(pack, 1)
                         .unwrap();
                     break;
                 }
             }
-            merchant_data_list.update_merchant(current_merchant_data);
+
+            // Push back to merchant data.
+            // If current merchant existed in merchant list, update function will update new detailed data to existing element, else push to list as new merchant
+            merchant_list.update_merchant(current_merchant);
             continue;
         }
 
-        // Count Subscriptions
+        //  Count Subscriptions
         if SUBSCRIPTION_ACTIVATED_STRINGS.contains(&event.event().as_str()) {
-            current_merchant_data.increase_subscription_activated_count(1);
-            current_merchant_data.push_subscription_event(event);
-            merchant_data_list.update_merchant(current_merchant_data);
+            current_merchant.increase_subscription_activated_count(1);
+            current_merchant.push_subscription_event(event);
+            merchant_list.update_merchant(current_merchant);
             continue;
         }
         if SUBSCRIPTION_CANCELED_STRINGS.contains(&event.event().as_str()) {
-            current_merchant_data.increase_subscription_canceled_count(1);
-            current_merchant_data.push_subscription_event(event);
-            merchant_data_list.update_merchant(current_merchant_data);
+            current_merchant.increase_subscription_canceled_count(1);
+            current_merchant.push_subscription_event(event);
+            merchant_list.update_merchant(current_merchant);
             continue;
         }
     }
 
-    (total_stats, merchant_data_list)
-}
-
-pub fn process_merchant_data_and_count_final_stats(
-    total_stats: &mut TotalStats,
-    merchant_data_list: &mut MerchantDataList,
-    pricing_defs: &PricingDefs,
-    case_sensitive_regex: bool,
-) -> anyhow::Result<()> {
-    // Calculate final stats
+    // Calculate more stats without merchant data analyzing
     total_stats.set_merchant_growth(
         *total_stats.installed_count() as i32 + *total_stats.store_reopened_count() as i32
             - *total_stats.uninstalled_count() as i32
@@ -161,9 +154,20 @@ pub fn process_merchant_data_and_count_final_stats(
         0.0
     });
 
-    // Process merchant data
-    for merchant in &mut merchant_data_list.merchants_mut().values_mut() {
-        // Updated installed status
+    (total_stats, merchant_list)
+}
+
+/// Analyze subscription-related data from base data
+/// Update the base data in place so that it becomes the final data.
+fn analyze_details(
+    total_stats: &mut TotalStats,
+    merchant_list: &mut MerchantList,
+    pricing_defs: &PricingDefs,
+    case_sensitive_regex: bool,
+) {
+    //  Process merchant data
+    for merchant in merchant_list.merchants_mut().values_mut() {
+        //  Updated installed status
         match *merchant.installed_count() as i32 + *merchant.store_reopened_count() as i32
             - *merchant.uninstalled_count() as i32
             - *merchant.store_closed_count() as i32
@@ -185,7 +189,7 @@ pub fn process_merchant_data_and_count_final_stats(
             }
         }
 
-        // Determine final subscription status
+        //  Determine final subscription status
         match *merchant.subscription_activated_count() as i32
             - *merchant.subscription_canceled_count() as i32
         {
@@ -202,11 +206,11 @@ pub fn process_merchant_data_and_count_final_stats(
             }
         }
 
-        // Determine new subscription details
+        //  Determine new subscription details
         for event in merchant.clone().subscription_events().iter().rev() {
-            // Use reverse order to get the latest activated event
+            //  Use reverse order to get the latest activated event
             if SUBSCRIPTION_ACTIVATED_STRINGS.contains(&event.event().as_str()) {
-                // Determine plan
+                //  Determine plan
                 for plan in pricing_defs.subscriptions() {
                     let mut re = if case_sensitive_regex {
                         Regex::new(plan.regex_pattern().as_str()).unwrap()
@@ -220,7 +224,7 @@ pub fn process_merchant_data_and_count_final_stats(
                     {
                         merchant.set_last_new_sub_plan(Some(plan.clone()));
 
-                        // Determine billing cycle
+                        //  Determine billing cycle
                         re = if case_sensitive_regex {
                             Regex::new(YEARLY_PATTERN).unwrap()
                         } else {
@@ -244,9 +248,9 @@ pub fn process_merchant_data_and_count_final_stats(
                                 merchant.last_new_sub_billing_cycle().as_ref().unwrap(),
                                 1,
                             )
-                            .unwrap();
+                            .unwrap(); // Always Ok, because pricing definitions are not modified anywhere in whole program
 
-                        // Determine if the event stands for an active subscription
+                        //  Determine if the event stands for an active subscription
                         if merchant.subscription_status() == SUBSCRIPTION_STATUS_ACTIVE {
                             total_stats
                                 .sub_stats_details_mut()
@@ -256,7 +260,7 @@ pub fn process_merchant_data_and_count_final_stats(
                                     merchant.last_new_sub_billing_cycle().as_ref().unwrap(),
                                     1,
                                 )
-                                .unwrap();
+                                .unwrap(); // Always Ok, because pricing definitions are not modified anywhere in whole program
                         }
 
                         break;
@@ -267,17 +271,17 @@ pub fn process_merchant_data_and_count_final_stats(
             }
         }
 
-        // Determine canceled subscription details
+        //  Determine canceled subscription details
         for event in merchant.clone().subscription_events().iter() {
-            // Use normal order to get the earliest canceled event
+            //  Use normal order to get the earliest canceled event
             if SUBSCRIPTION_CANCELED_STRINGS.contains(&event.event().as_str()) {
-                // Determine plan
+                //  Determine plan
                 for plan in pricing_defs.subscriptions() {
                     let mut re = Regex::new(plan.regex_pattern().as_str()).unwrap();
                     if re.is_match(event.details().as_str()) {
                         merchant.set_first_canceled_sub_plan(Some(plan.clone()));
 
-                        // Determine billing cycle
+                        //  Determine billing cycle
                         re = Regex::new(YEARLY_PATTERN).unwrap();
                         if re.is_match(event.details().as_str()) {
                             merchant
@@ -298,9 +302,9 @@ pub fn process_merchant_data_and_count_final_stats(
                                     .unwrap(),
                                 1,
                             )
-                            .unwrap();
+                            .unwrap(); // Always Ok, because pricing definitions are not modified anywhere in whole program
 
-                        // Determine if the event stands for a canceled subscription
+                        //  Determine if the event stands for a canceled subscription
                         if merchant.subscription_status() == SUBSCRIPTION_STATUS_CANCELED {
                             total_stats
                                 .sub_stats_details_mut()
@@ -313,7 +317,7 @@ pub fn process_merchant_data_and_count_final_stats(
                                         .unwrap(),
                                     1,
                                 )
-                                .unwrap();
+                                .unwrap(); // Always Ok, because pricing definitions are not modified anywhere in whole program
                         }
 
                         break;
@@ -324,7 +328,7 @@ pub fn process_merchant_data_and_count_final_stats(
             }
         }
 
-        // Update final total data
+        //  Update final total data
         total_stats.set_churn_rate(if *total_stats.installed_count() > 0 {
             (*total_stats.uninstalled_count() as f64 - *total_stats.old_uninstalled_count() as f64)
                 / *total_stats.installed_count() as f64
@@ -340,10 +344,10 @@ pub fn process_merchant_data_and_count_final_stats(
         total_stats
             .set_paid_growth(total_stats.sub_growth() + *total_stats.one_time_count() as i32);
 
-        // Calculate subscription growth details
+        //  Calculate subscription growth details
         let mut calculated_result: IndexMap<String, i32> = IndexMap::new();
 
-        // Yearly
+        //  Yearly
         for (plan, new_count) in total_stats
             .clone()
             .sub_stats_details()
@@ -363,7 +367,7 @@ pub fn process_merchant_data_and_count_final_stats(
             .sub_growth_mut()
             .set_yearly_counts(calculated_result.clone());
 
-        // Monthly
+        //  Monthly
         calculated_result.clear();
         for (plan, new_count) in total_stats
             .clone()
@@ -384,24 +388,23 @@ pub fn process_merchant_data_and_count_final_stats(
             .sub_growth_mut()
             .set_monthly_counts(calculated_result.clone());
     }
-
-    Ok(())
 }
 
+/// Analyze event list and return final data
 pub fn analyze_events_list(
     event_list: &Vec<AppEvent>,
     pricing_defs: &PricingDefs,
     excluding_defs: &ExcludingDef,
     case_sensitive_regex: bool,
-) -> anyhow::Result<(TotalStats, MerchantDataList)> {
-    let (mut total_stats, mut merchant_data) = build_merchant_data_and_count_basic_stats(
+) -> anyhow::Result<(TotalStats, MerchantList)> {
+    let (mut total_stats, mut merchant_data) = build_base_data(
         event_list,
         pricing_defs,
         excluding_defs,
         case_sensitive_regex,
     );
 
-    process_merchant_data_and_count_final_stats(
+    analyze_details(
         &mut total_stats,
         &mut merchant_data,
         pricing_defs,
@@ -411,7 +414,7 @@ pub fn analyze_events_list(
     Ok((total_stats, merchant_data))
 }
 
-pub fn analyze_file(
+fn analyze_file(
     event_history_file: &PathBuf,
     pricing_defs: &PricingDefs,
     excluding_defs: &ExcludingDef,

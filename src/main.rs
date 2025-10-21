@@ -8,8 +8,6 @@ mod models;
 
 use std::env::args;
 
-use anyhow::{Result, anyhow};
-
 fn main() -> anyhow::Result<()> {
     let args: Vec<String> = args().collect();
 

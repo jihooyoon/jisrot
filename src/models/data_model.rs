@@ -13,7 +13,7 @@ pub enum BillingCycle {
 
 #[derive(Debug, Clone, Getters, Setters, Serialize, Deserialize)]
 #[getset(get = "pub", set = "pub")]
-pub struct MerchantData {
+pub struct Merchant {
     shop_domain: String,
     checked: bool,
     installed_count: u32,
@@ -46,7 +46,7 @@ pub struct MerchantData {
     first_canceled_sub_billing_cycle: Option<BillingCycle>,
 }
 
-impl MerchantData {
+impl Merchant {
     pub fn new(shop_domain: &String, one_time_packs: &Vec<PricingUnit>) -> Self {
         let mut one_time_details: IndexMap<String, u32> = IndexMap::new();
 
@@ -136,15 +136,15 @@ impl MerchantData {
 
 #[derive(Debug, Clone, Getters, MutGetters, Setters, Serialize, Deserialize)]
 #[getset(get = "pub", set = "pub")]
-pub struct MerchantDataList {
+pub struct MerchantList {
     start_time: Option<NaiveDateTime>,
     end_time: Option<NaiveDateTime>,
 
     #[getset(get = "pub", get_mut = "pub", set = "")]
-    merchants: IndexMap<String, MerchantData>,
+    merchants: IndexMap<String, Merchant>,
 }
 
-impl MerchantDataList {
+impl MerchantList {
     pub fn new() -> Self {
         Self {
             start_time: None,
@@ -153,7 +153,7 @@ impl MerchantDataList {
         }
     }
 
-    pub fn update_merchant(&mut self, merchant: MerchantData) {
+    pub fn update_merchant(&mut self, merchant: Merchant) {
         self.merchants
             .insert(merchant.shop_domain().clone(), merchant);
     }
@@ -398,7 +398,7 @@ pub struct AppEvent {
 }
 
 impl AppEvent {
-    pub fn new() -> Self {
+    pub fn _new() -> Self {
         AppEvent {
             time: None,
             event: String::default(),
