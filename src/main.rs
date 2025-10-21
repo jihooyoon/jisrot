@@ -4,7 +4,7 @@ mod analyzing;
 mod app_egui;
 mod data_io;
 mod definitions;
-mod modals;
+mod models;
 
 use std::env::args;
 

@@ -2,7 +2,7 @@ use anyhow::{Result, anyhow};
 use std::path::PathBuf;
 
 use crate::definitions::common::*;
-use crate::modals::data_modal::*;
+use crate::models::data_model::*;
 use indexmap::IndexMap;
 
 pub fn read_events_from_csv(file_in: &PathBuf) -> anyhow::Result<Vec<AppEvent>> {

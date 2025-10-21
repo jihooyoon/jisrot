@@ -29,7 +29,7 @@ pub mod ui {
             default_ms_excluding_def::MS_EXCLUDING_DEF_JSON_STRING,
             default_ms_pricing_def::{SBM_PRICING_DEF_JSON_STRING, SPOP_PRICING_DEF_JSON_STRING},
         },
-        modals::ui_modal::*,
+        models::ui_model::*,
     };
 
     pub const BTN_BROWSE_LBL: &str = "Browse...";

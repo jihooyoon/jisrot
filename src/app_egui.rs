@@ -1,16 +1,16 @@
 use std::path::PathBuf;
 
 use eframe::{
+    APP_KEY, App, CreationContext, NativeOptions, Storage,
     egui::{Button, CentralPanel, ComboBox, Ui, ViewportBuilder},
     epaint::tessellator::Path,
-    get_value, icon_data, run_native, set_value, App, CreationContext, NativeOptions, Storage,
-    APP_KEY,
+    get_value, icon_data, run_native, set_value,
 };
 use rfd::FileDialog;
 use serde::{self, Deserialize, Serialize};
 
 use crate::definitions::strings::{message, ui::*};
-use crate::modals::ui_modal::*;
+use crate::models::ui_model::*;
 use crate::{analyzing::analyze_from_gui, definitions::strings::data::*};
 
 #[derive(Serialize, Deserialize)]

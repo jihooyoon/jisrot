@@ -12,13 +12,14 @@ use crate::definitions::default_ms_excluding_def::*;
 use crate::definitions::default_ms_pricing_def::*;
 
 use crate::definitions::strings::*;
-use crate::modals::data_modal::*;
-use crate::modals::ui_modal::UiOption;
+use crate::models::data_model::*;
+use crate::models::ui_model::UiOption;
 
 pub fn build_merchant_data_and_count_basic_stats(
     app_event_list: &Vec<AppEvent>,
     pricing_defs: &PricingDefs,
     excluding_def: &ExcludingDef,
+    case_sensitive_regex: bool,
 ) -> (TotalStats, MerchantDataList) {
     let mut merchant_data_list: MerchantDataList = MerchantDataList::new();
     let mut total_stats: TotalStats = TotalStats::new(pricing_defs);
@@ -32,8 +33,15 @@ pub fn build_merchant_data_and_count_basic_stats(
 
     for event in app_event_list {
         //Excluding check
-        let mut re = Regex::new(excluding_def.excluding_pattern()).unwrap();
-        if re.is_match(event.shop_email().as_str()) {
+        let mut re = if case_sensitive_regex {
+            Regex::new(excluding_def.excluding_pattern()).unwrap()
+        } else {
+            Regex::new(excluding_def.excluding_pattern().to_lowercase().as_str()).unwrap()
+        };
+
+        if re.is_match(event.shop_email().as_str())
+            || (!case_sensitive_regex && re.is_match(event.shop_email().to_lowercase().as_str()))
+        {
             // !!! HARD CODED EXCLUDING FIELD
             continue;
         }
@@ -95,8 +103,16 @@ pub fn build_merchant_data_and_count_basic_stats(
             current_merchant_data.push_one_time_event(event);
 
             for pack in pricing_defs.one_times() {
-                re = Regex::new(pack.regex_pattern().as_str()).unwrap();
-                if re.is_match(event.details().as_str()) {
+                re = if case_sensitive_regex {
+                    Regex::new(pack.regex_pattern().as_str()).unwrap()
+                } else {
+                    Regex::new(pack.regex_pattern().to_lowercase().as_str()).unwrap()
+                };
+
+                if re.is_match(event.details().as_str())
+                    || (!case_sensitive_regex
+                        && re.is_match(event.details().to_lowercase().as_str()))
+                {
                     total_stats.increase_one_time_pack_count(pack, 1).unwrap();
                     current_merchant_data
                         .increase_one_time_pack_count(pack, 1)
@@ -130,6 +146,7 @@ pub fn process_merchant_data_and_count_final_stats(
     total_stats: &mut TotalStats,
     merchant_data_list: &mut MerchantDataList,
     pricing_defs: &PricingDefs,
+    case_sensitive_regex: bool,
 ) -> anyhow::Result<()> {
     // Calculate final stats
     total_stats.set_merchant_growth(
@@ -191,13 +208,29 @@ pub fn process_merchant_data_and_count_final_stats(
             if SUBSCRIPTION_ACTIVATED_STRINGS.contains(&event.event().as_str()) {
                 // Determine plan
                 for plan in pricing_defs.subscriptions() {
-                    let mut re = Regex::new(plan.regex_pattern().as_str()).unwrap();
-                    if re.is_match(event.details().as_str()) {
+                    let mut re = if case_sensitive_regex {
+                        Regex::new(plan.regex_pattern().as_str()).unwrap()
+                    } else {
+                        Regex::new(plan.regex_pattern().to_lowercase().as_str()).unwrap()
+                    };
+
+                    if re.is_match(event.details().as_str())
+                        || (!case_sensitive_regex
+                            && re.is_match(&event.details().to_lowercase().as_str()))
+                    {
                         merchant.set_last_new_sub_plan(Some(plan.clone()));
 
                         // Determine billing cycle
-                        re = Regex::new(YEARLY_PATTERN).unwrap();
-                        if re.is_match(event.details().as_str()) {
+                        re = if case_sensitive_regex {
+                            Regex::new(YEARLY_PATTERN).unwrap()
+                        } else {
+                            Regex::new(YEARLY_PATTERN.to_lowercase().as_str()).unwrap()
+                        };
+
+                        if re.is_match(event.details().as_str())
+                            || (!case_sensitive_regex
+                                && re.is_match(&event.details().to_lowercase().as_str()))
+                        {
                             merchant.set_last_new_sub_billing_cycle(Some(BillingCycle::Yearly));
                         } else {
                             merchant.set_last_new_sub_billing_cycle(Some(BillingCycle::Monthly));
@@ -359,11 +392,21 @@ pub fn analyze_events_list(
     event_list: &Vec<AppEvent>,
     pricing_defs: &PricingDefs,
     excluding_defs: &ExcludingDef,
+    case_sensitive_regex: bool,
 ) -> anyhow::Result<(TotalStats, MerchantDataList)> {
-    let (mut total_stats, mut merchant_data) =
-        build_merchant_data_and_count_basic_stats(event_list, pricing_defs, excluding_defs);
+    let (mut total_stats, mut merchant_data) = build_merchant_data_and_count_basic_stats(
+        event_list,
+        pricing_defs,
+        excluding_defs,
+        case_sensitive_regex,
+    );
 
-    process_merchant_data_and_count_final_stats(&mut total_stats, &mut merchant_data, pricing_defs);
+    process_merchant_data_and_count_final_stats(
+        &mut total_stats,
+        &mut merchant_data,
+        pricing_defs,
+        case_sensitive_regex,
+    );
 
     Ok((total_stats, merchant_data))
 }
@@ -372,6 +415,7 @@ pub fn analyze_file(
     event_history_file: &PathBuf,
     pricing_defs: &PricingDefs,
     excluding_defs: &ExcludingDef,
+    case_sensitive_regex: bool,
     out_folder: &PathBuf,
     out_file_total_stats_pref: &str,
     out_file_merchant_data_pref: &Option<String>,
@@ -379,8 +423,12 @@ pub fn analyze_file(
 ) -> anyhow::Result<String> {
     let event_list: Vec<AppEvent> = read_events_from_csv(event_history_file)?;
 
-    let (total_stats, merchant_data) =
-        analyze_events_list(&event_list, pricing_defs, excluding_defs)?;
+    let (total_stats, merchant_data) = analyze_events_list(
+        &event_list,
+        pricing_defs,
+        excluding_defs,
+        case_sensitive_regex,
+    )?;
 
     let mut message_success: String;
 
@@ -540,6 +588,7 @@ pub fn analyze_from_gui(
                 f,
                 &pricing_defs,
                 &excluding_defs,
+                case_sensitive_regex,
                 &out_folder,
                 &out_file_total_stats_pref,
                 &out_file_merchant_data_pref,
