@@ -1,7 +1,12 @@
 [package]
 name = "jisrot"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
+authors = ["Ji Hoo Yoon <Phan.Huy.Cong@gmail.com>"]
+description = "Ji's Shopify Researching Operation Tools"
+license = "GPLv2"
+repository = "https://github.com/jihooyoon/jisrot"
+homepage = "https://github.com/jihooyoon"
 
 [dependencies]
 anyhow = "1.0.100"
