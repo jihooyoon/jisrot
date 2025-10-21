@@ -9,9 +9,9 @@ use eframe::{
 use rfd::FileDialog;
 use serde::{self, Deserialize, Serialize};
 
-use crate::definitions::strings::data::*;
-use crate::definitions::strings::ui::*;
+use crate::definitions::strings::{message, ui::*};
 use crate::modals::ui_modal::*;
+use crate::{analyzing::analyze_from_gui, definitions::strings::data::*};
 
 #[derive(Serialize, Deserialize)]
 struct QuickGUIApp {
@@ -99,7 +99,30 @@ impl App for QuickGUIApp {
                         .pick_files();
                 }
 
-                if ui.button(BTN_ANALYZE_LBL).clicked() {}
+                if ui.button(BTN_ANALYZE_LBL).clicked() {
+                    match analyze_from_gui(
+                        &self.event_history_file_list,
+                        &self.selected_pricing_defs_option,
+                        &self.selected_excluding_defs_option,
+                        &self.pricing_defs_file,
+                        &self.excluding_defs_file,
+                        self.debug_mode,
+                        self.case_sensitive_regex,
+                    ) {
+                        Ok(m) => {
+                            rfd::MessageDialog::new()
+                                .set_description(m)
+                                .set_level(rfd::MessageLevel::Info)
+                                .show();
+                        }
+                        Err(e) => {
+                            rfd::MessageDialog::new()
+                                .set_description(format!("{:?}", e))
+                                .set_level(rfd::MessageLevel::Error)
+                                .show();
+                        }
+                    }
+                }
             });
 
             ui.add_space(4.0);
@@ -130,7 +153,7 @@ fn selector_with_file_support(
         ui.label(label);
         ui.horizontal(|ui| {
             ComboBox::from_id_salt(selector_id)
-                .selected_text(selected_option.value().to_string())
+                .selected_text(selected_option.text().to_string())
                 .show_ui(ui, |ui| {
                     for option in option_list {
                         ui.selectable_value(

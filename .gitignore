@@ -2,6 +2,7 @@
 drafts/
 .DS_Store/
 output/
+Output/
 
 # Libs Output
 CONOUT$

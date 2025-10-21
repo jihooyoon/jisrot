@@ -2,8 +2,8 @@ use crate::definitions::common::*;
 use anyhow::{Result, anyhow};
 use chrono::{NaiveDate, NaiveDateTime};
 use getset::{Getters, MutGetters, Setters};
+use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum BillingCycle {
@@ -33,7 +33,7 @@ pub struct MerchantData {
     one_time_count: u32,
 
     #[getset(skip)]
-    one_time_details: HashMap<String, u32>,
+    one_time_details: IndexMap<String, u32>,
 
     #[getset(skip)]
     one_time_events: Vec<AppEvent>,
@@ -48,7 +48,7 @@ pub struct MerchantData {
 
 impl MerchantData {
     pub fn new(shop_domain: &String, one_time_packs: &Vec<PricingUnit>) -> Self {
-        let mut one_time_details: HashMap<String, u32> = HashMap::new();
+        let mut one_time_details: IndexMap<String, u32> = IndexMap::new();
 
         for pack in one_time_packs.iter() {
             one_time_details.insert(pack.code.clone(), 0);
@@ -141,7 +141,7 @@ pub struct MerchantDataList {
     end_time: Option<NaiveDateTime>,
 
     #[getset(get = "pub", get_mut = "pub", set = "")]
-    merchants: HashMap<String, MerchantData>,
+    merchants: IndexMap<String, MerchantData>,
 }
 
 impl MerchantDataList {
@@ -149,7 +149,7 @@ impl MerchantDataList {
         Self {
             start_time: None,
             end_time: None,
-            merchants: HashMap::new(),
+            merchants: IndexMap::new(),
         }
     }
 
@@ -180,7 +180,7 @@ pub struct TotalStats {
     one_time_count: u32,
 
     #[getset(skip)]
-    one_time_details: HashMap<String, u32>,
+    one_time_details: IndexMap<String, u32>,
 
     new_sub_count: u32,
     canceled_sub_count: u32,
@@ -193,7 +193,7 @@ pub struct TotalStats {
 
 impl TotalStats {
     pub fn new(pricing_defs: &PricingDefs) -> Self {
-        let mut one_time_details: HashMap<String, u32> = HashMap::new();
+        let mut one_time_details: IndexMap<String, u32> = IndexMap::new();
 
         for pack in pricing_defs.one_times.iter() {
             one_time_details.insert(pack.code.clone(), 0);
@@ -307,14 +307,14 @@ pub struct PricingDefs {
 #[derive(Debug, Setters, Getters, MutGetters, Serialize, Deserialize, Clone)]
 #[getset(get = "pub", get_mut = "pub", set = "pub")]
 pub struct SubscriptionStatsCounter {
-    monthly_counts: HashMap<String, i32>,
-    yearly_counts: HashMap<String, i32>,
+    monthly_counts: IndexMap<String, i32>,
+    yearly_counts: IndexMap<String, i32>,
 }
 
 impl SubscriptionStatsCounter {
     pub fn new(subscription_plan_list: &Vec<PricingUnit>) -> Self {
-        let mut monthly_counts: HashMap<String, i32> = HashMap::new();
-        let mut yearly_counts: HashMap<String, i32> = HashMap::new();
+        let mut monthly_counts: IndexMap<String, i32> = IndexMap::new();
+        let mut yearly_counts: IndexMap<String, i32> = IndexMap::new();
 
         for subscription_plan in subscription_plan_list.iter() {
             monthly_counts.insert(subscription_plan.code.clone(), 0);
@@ -413,7 +413,7 @@ impl AppEvent {
     }
 
     fn parse_time(
-        data_hash: &HashMap<String, String>,
+        data_hash: &IndexMap<String, String>,
         data_field: &str,
         pattern: &str,
     ) -> Result<NaiveDateTime, String> {
@@ -449,30 +449,33 @@ impl AppEvent {
         }
     }
 
-    pub fn from_hashmap(hashmap: &HashMap<String, String>) -> Result<Self, String> {
+    pub fn from_indexmap(IndexMap: &IndexMap<String, String>) -> Result<Self, String> {
         let mut time = None;
         let mut billing_on = None;
 
-        match Self::parse_time(hashmap, TIME_FIELD, EVENT_TIME_PATTERN) {
+        match Self::parse_time(IndexMap, TIME_FIELD, EVENT_TIME_PATTERN) {
             Ok(date_time) => time = Some(date_time),
             Err(e) => println!("Warning: {}", e),
         }
 
-        match Self::parse_time(hashmap, BILLING_ON_FIELD, BILLING_ON_PATTERN) {
+        match Self::parse_time(IndexMap, BILLING_ON_FIELD, BILLING_ON_PATTERN) {
             Ok(date_time) => billing_on = Some(date_time),
             Err(e) => println!("Warning: {}", e),
         }
 
         Ok(AppEvent {
             time,
-            event: hashmap.get(EVENT_FIELD).cloned().unwrap_or_default(),
-            details: hashmap.get(DETAILS_FIELD).cloned().unwrap_or_default(),
+            event: IndexMap.get(EVENT_FIELD).cloned().unwrap_or_default(),
+            details: IndexMap.get(DETAILS_FIELD).cloned().unwrap_or_default(),
             billing_on,
-            shop_name: hashmap.get(SHOP_NAME_FIELD).cloned().unwrap_or_default(),
-            shop_country: hashmap.get(SHOP_COUNTRY_FIELD).cloned().unwrap_or_default(),
-            shop_email: hashmap.get(EMAIL_FIELD).cloned().unwrap_or_default(),
-            shop_domain: hashmap.get(SHOP_DOMAIN_FIELD).cloned().unwrap_or_default(),
-            key: hashmap.get(KEY_FIELD).cloned().unwrap_or_default(),
+            shop_name: IndexMap.get(SHOP_NAME_FIELD).cloned().unwrap_or_default(),
+            shop_country: IndexMap
+                .get(SHOP_COUNTRY_FIELD)
+                .cloned()
+                .unwrap_or_default(),
+            shop_email: IndexMap.get(EMAIL_FIELD).cloned().unwrap_or_default(),
+            shop_domain: IndexMap.get(SHOP_DOMAIN_FIELD).cloned().unwrap_or_default(),
+            key: IndexMap.get(KEY_FIELD).cloned().unwrap_or_default(),
         })
     }
 }

@@ -1,13 +1,17 @@
 pub mod message {
     pub mod success {
-        pub const SPECIFIC_DATA_WRITTEN: &str = "is written to file: ";
+        pub const TITLE: &str = "Success";
+        pub const SPECIFIC_DATA_WRITTEN_FILE: &str = "is written to file";
     }
     pub mod error {
+        pub const TITLE: &str = "Error";
         pub const FILE_NOT_CHOSEN: &str = "File not chosen";
     }
 }
 
 pub mod data {
+    pub const OUT_FOLDER_NAME: &str = "Output";
+
     pub const KIND_PREDEFINED: &str = "Pre-defined";
     pub const KIND_CUSTOM: &str = "Custom";
     pub const TOTAL_STATS: &str = "Total Stats";

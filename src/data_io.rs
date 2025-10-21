@@ -3,7 +3,7 @@ use std::path::PathBuf;
 
 use crate::definitions::common::*;
 use crate::modals::data_modal::*;
-use std::collections::HashMap;
+use indexmap::IndexMap;
 
 pub fn read_events_from_csv(file_in: &PathBuf) -> anyhow::Result<Vec<AppEvent>> {
     let mut rdr = csv::Reader::from_path(file_in)?;
@@ -12,13 +12,13 @@ pub fn read_events_from_csv(file_in: &PathBuf) -> anyhow::Result<Vec<AppEvent>> 
     let mut app_event_list: Vec<AppEvent> = Vec::new();
 
     for record in rdr.records() {
-        let record_hash: HashMap<String, String> = record?
+        let record_hash: IndexMap<String, String> = record?
             .iter()
             .zip(headers.iter())
             .map(|(value, header)| (header.to_string(), value.to_string()))
             .collect();
 
-        match AppEvent::from_hashmap(&record_hash) {
+        match AppEvent::from_indexmap(&record_hash) {
             Ok(app_event) => app_event_list.push(app_event),
             Err(e) => return Err(anyhow!("Error parsing record: {}", e)),
         }

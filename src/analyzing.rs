@@ -1,9 +1,9 @@
 use anyhow::Error;
 use anyhow::{Result, anyhow};
 use eframe::epaint::tessellator::Path;
+use indexmap::IndexMap;
 use regex::Regex;
 use serde::de::value;
-use std::collections::HashMap;
 use std::path::PathBuf;
 
 use crate::data_io::*;
@@ -308,7 +308,7 @@ pub fn process_merchant_data_and_count_final_stats(
             .set_paid_growth(total_stats.sub_growth() + *total_stats.one_time_count() as i32);
 
         // Calculate subscription growth details
-        let mut calculated_result: HashMap<String, i32> = HashMap::new();
+        let mut calculated_result: IndexMap<String, i32> = IndexMap::new();
 
         // Yearly
         for (plan, new_count) in total_stats
@@ -394,7 +394,7 @@ pub fn analyze_file(
     match write_total_stats_to_json(&out_file_total_stats, &total_stats) {
         Ok(()) => {
             message_success = data::TOTAL_STATS.to_string()
-                + message::success::SPECIFIC_DATA_WRITTEN
+                + message::success::SPECIFIC_DATA_WRITTEN_FILE
                 + out_file_total_stats.display().to_string().as_str()
         }
         Err(e) => return Err(e),
@@ -411,7 +411,7 @@ pub fn analyze_file(
             Ok(()) => {
                 message_success = message_success
                     + data::MERCHANT_DATA
-                    + message::success::SPECIFIC_DATA_WRITTEN
+                    + message::success::SPECIFIC_DATA_WRITTEN_FILE
                     + out_file_merchant_data.display().to_string().as_str()
             }
             Err(e) => return Err(e),
@@ -429,7 +429,7 @@ pub fn analyze_file(
             Ok(()) => {
                 message_success = message_success
                     + data::APP_EVENTS
-                    + message::success::SPECIFIC_DATA_WRITTEN
+                    + message::success::SPECIFIC_DATA_WRITTEN_FILE
                     + out_file_app_events.display().to_string().as_str()
             }
             Err(e) => return Err(e),
@@ -441,20 +441,20 @@ pub fn analyze_file(
 
 pub fn analyze_from_gui(
     event_history_file_list: &Option<Vec<PathBuf>>,
-    selected_pricing_defs: &UiOption,
-    selected_excluding_defs: &UiOption,
-    pricing_defs_file: Option<&PathBuf>,
-    excluding_defs_file: Option<&PathBuf>,
+    selected_pricing_defs_option: &UiOption,
+    selected_excluding_defs_option: &UiOption,
+    pricing_defs_file: &Option<PathBuf>,
+    excluding_defs_file: &Option<PathBuf>,
     debug_mode: bool,
     case_sensitive_regex: bool,
 ) -> anyhow::Result<String> {
     let pricing_defs: PricingDefs;
     let excluding_defs: ExcludingDef;
 
-    pricing_defs = match selected_pricing_defs {
+    pricing_defs = match selected_pricing_defs_option {
         d if d.value() == ui::OPTION_CUSTOM.value() => {
             if let Some(f) = pricing_defs_file {
-                read_pricing_def_from_json(f)?
+                read_pricing_def_from_json(&f)?
             } else {
                 return Err(anyhow!(
                     "{}",
@@ -465,14 +465,17 @@ pub fn analyze_from_gui(
             }
         }
         _ => read_pricing_def_from_json_str(
-            selected_pricing_defs.connected_data().as_ref().unwrap(),
+            selected_pricing_defs_option
+                .connected_data()
+                .as_ref()
+                .unwrap(),
         )?,
     };
 
-    excluding_defs = match selected_excluding_defs {
+    excluding_defs = match selected_excluding_defs_option {
         d if d.value() == ui::OPTION_CUSTOM.value() => {
             if let Some(f) = excluding_defs_file {
-                read_excluding_def_from_json(f)?
+                read_excluding_def_from_json(&f)?
             } else {
                 return Err(anyhow!(
                     "{}",
@@ -483,15 +486,21 @@ pub fn analyze_from_gui(
             }
         }
         _ => read_excluding_def_from_json_str(
-            selected_excluding_defs.connected_data().as_ref().unwrap(),
+            selected_excluding_defs_option
+                .connected_data()
+                .as_ref()
+                .unwrap(),
         )?,
     };
 
     if let Some(f_list) = event_history_file_list {
-        let out_folder: PathBuf = std::env::current_dir()?;
+        let out_folder: PathBuf = std::env::current_dir()?.join(data::OUT_FOLDER_NAME);
         let mut final_error_message: String = String::from("");
-        let mut final_success_message: String =
-            data::TOTAL_STATS.to_string() + message::success::SPECIFIC_DATA_WRITTEN + "\n";
+        let mut final_success_message: String = format!(
+            "{} {}\n",
+            data::TOTAL_STATS.to_string(),
+            message::success::SPECIFIC_DATA_WRITTEN_FILE
+        );
 
         let out_file_total_stats_pref: String = data::TOTAL_STATS
             .to_string()
@@ -502,12 +511,14 @@ pub fn analyze_from_gui(
         let mut out_file_app_events_pref: Option<String> = None;
 
         if debug_mode {
-            final_success_message = final_success_message
-                + data::MERCHANT_DATA
-                + message::success::SPECIFIC_DATA_WRITTEN
-                + "\n"
-                + data::APP_EVENTS
-                + message::success::SPECIFIC_DATA_WRITTEN;
+            final_success_message += format!(
+                "{} {}\n{} {}",
+                data::MERCHANT_DATA,
+                message::success::SPECIFIC_DATA_WRITTEN_FILE,
+                data::APP_EVENTS,
+                message::success::SPECIFIC_DATA_WRITTEN_FILE
+            )
+            .as_str();
 
             out_file_merchant_data_pref = Some(
                 data::MERCHANT_DATA
@@ -541,12 +552,13 @@ pub fn analyze_from_gui(
         if final_error_message != "" {
             return Err(anyhow!(final_error_message));
         }
+
+        return Ok(final_success_message);
     } else {
         return Err(anyhow!(
-            "{}",
-            data::APP_EVENTS.to_string() + message::error::FILE_NOT_CHOSEN
+            "{} {}!",
+            data::APP_EVENTS.to_string(),
+            message::error::FILE_NOT_CHOSEN
         ));
     }
-
-    Ok(format!(""))
 }
