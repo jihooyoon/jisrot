@@ -51,7 +51,7 @@ impl QuickGUIApp {
         //Must enable 'persistence' feature to work
         if let Some(storage) = cc.storage {
             if !reset_default {
-                get_value(storage, APP_KEY).unwrap_or_default()
+                return get_value(storage, APP_KEY).unwrap_or_default();
             }
         }
         Default::default()

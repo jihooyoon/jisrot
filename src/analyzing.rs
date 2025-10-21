@@ -385,7 +385,7 @@ pub fn analyze_file(
     let mut message_success: String;
 
     let out_file_total_stats: PathBuf = out_folder.join(format!(
-        "{}_{}_{}",
+        "{}_{}_{}.json",
         out_file_total_stats_pref,
         total_stats.start_time_str(),
         total_stats.end_time_str()
@@ -402,7 +402,7 @@ pub fn analyze_file(
 
     if let Some(pref) = out_file_merchant_data_pref {
         let out_file_merchant_data: PathBuf = out_folder.join(format!(
-            "{}_{}_{}",
+            "{}_{}_{}.json",
             pref,
             total_stats.start_time_str(),
             total_stats.end_time_str()
@@ -420,7 +420,7 @@ pub fn analyze_file(
 
     if let Some(pref) = out_file_app_events_pref {
         let out_file_app_events: PathBuf = out_folder.join(format!(
-            "{}_{}_{}",
+            "{}_{}_{}.json",
             pref,
             total_stats.start_time_str(),
             total_stats.end_time_str()
@@ -457,10 +457,10 @@ pub fn analyze_from_gui(
                 read_pricing_def_from_json(&f)?
             } else {
                 return Err(anyhow!(
-                    "{}",
-                    data::KIND_CUSTOM.to_string()
-                        + data::PRICING_DEFS
-                        + message::error::FILE_NOT_CHOSEN
+                    "{} {} {}!",
+                    data::KIND_CUSTOM.to_string(),
+                    data::PRICING_DEFS,
+                    message::error::FILE_NOT_CHOSEN
                 ));
             }
         }
@@ -478,10 +478,10 @@ pub fn analyze_from_gui(
                 read_excluding_def_from_json(&f)?
             } else {
                 return Err(anyhow!(
-                    "{}",
-                    data::KIND_CUSTOM.to_string()
-                        + data::EXCLUDING_DEFS
-                        + message::error::FILE_NOT_CHOSEN
+                    "{} {} {}!",
+                    data::KIND_CUSTOM.to_string(),
+                    data::EXCLUDING_DEFS,
+                    message::error::FILE_NOT_CHOSEN
                 ));
             }
         }
