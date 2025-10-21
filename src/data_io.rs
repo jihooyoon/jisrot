@@ -5,8 +5,11 @@ use crate::definitions::common::*;
 use crate::models::data_model::*;
 use indexmap::IndexMap;
 
-pub fn read_events_from_csv(file_in: &PathBuf) -> anyhow::Result<Vec<AppEvent>> {
-    let mut rdr = csv::Reader::from_path(file_in)?;
+pub fn read_events_from_csv(
+    source_file: &PathBuf,
+    excluding_check_field: &str,
+) -> anyhow::Result<Vec<AppEvent>> {
+    let mut rdr = csv::Reader::from_path(source_file)?;
     let headers: Vec<String> = rdr.headers()?.iter().map(|h| h.to_string()).collect();
 
     let mut app_event_list: Vec<AppEvent> = Vec::new();
@@ -18,7 +21,7 @@ pub fn read_events_from_csv(file_in: &PathBuf) -> anyhow::Result<Vec<AppEvent>> 
             .map(|(value, header)| (header.to_string(), value.to_string()))
             .collect();
 
-        match AppEvent::from_indexmap(&record_hash) {
+        match AppEvent::from_indexmap(&record_hash, excluding_check_field) {
             Ok(app_event) => app_event_list.push(app_event),
             Err(e) => return Err(anyhow!("Error parsing record: {}", e)),
         }

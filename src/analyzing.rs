@@ -39,10 +39,10 @@ pub fn build_merchant_data_and_count_basic_stats(
             Regex::new(excluding_def.excluding_pattern().to_lowercase().as_str()).unwrap()
         };
 
-        if re.is_match(event.shop_email().as_str())
-            || (!case_sensitive_regex && re.is_match(event.shop_email().to_lowercase().as_str()))
+        if re.is_match(&event.excluding_check_data().as_str())
+            || (!case_sensitive_regex
+                && re.is_match(event.excluding_check_data().to_lowercase().as_str()))
         {
-            // !!! HARD CODED EXCLUDING FIELD
             continue;
         }
 
@@ -421,7 +421,8 @@ pub fn analyze_file(
     out_file_merchant_data_pref: &Option<String>,
     out_file_app_events_pref: &Option<String>,
 ) -> anyhow::Result<String> {
-    let event_list: Vec<AppEvent> = read_events_from_csv(event_history_file)?;
+    let event_list: Vec<AppEvent> =
+        read_events_from_csv(event_history_file, &excluding_defs.excluding_field())?;
 
     let (total_stats, merchant_data) = analyze_events_list(
         &event_list,

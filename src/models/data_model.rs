@@ -394,7 +394,7 @@ pub struct AppEvent {
     shop_country: String,
     shop_email: String,
     shop_domain: String,
-    key: String,
+    excluding_check_data: String,
 }
 
 impl AppEvent {
@@ -408,7 +408,7 @@ impl AppEvent {
             shop_country: String::default(),
             shop_email: String::default(),
             shop_domain: String::default(),
-            key: String::default(),
+            excluding_check_data: String::default(),
         }
     }
 
@@ -449,33 +449,36 @@ impl AppEvent {
         }
     }
 
-    pub fn from_indexmap(IndexMap: &IndexMap<String, String>) -> Result<Self, String> {
+    pub fn from_indexmap(
+        source: &IndexMap<String, String>,
+        excluding_check_field: &str,
+    ) -> Result<Self, String> {
         let mut time = None;
         let mut billing_on = None;
 
-        match Self::parse_time(IndexMap, TIME_FIELD, EVENT_TIME_PATTERN) {
+        match Self::parse_time(source, TIME_FIELD, EVENT_TIME_PATTERN) {
             Ok(date_time) => time = Some(date_time),
             Err(e) => println!("Warning: {}", e),
         }
 
-        match Self::parse_time(IndexMap, BILLING_ON_FIELD, BILLING_ON_PATTERN) {
+        match Self::parse_time(source, BILLING_ON_FIELD, BILLING_ON_PATTERN) {
             Ok(date_time) => billing_on = Some(date_time),
             Err(e) => println!("Warning: {}", e),
         }
 
         Ok(AppEvent {
             time,
-            event: IndexMap.get(EVENT_FIELD).cloned().unwrap_or_default(),
-            details: IndexMap.get(DETAILS_FIELD).cloned().unwrap_or_default(),
+            event: source.get(EVENT_FIELD).cloned().unwrap_or_default(),
+            details: source.get(DETAILS_FIELD).cloned().unwrap_or_default(),
             billing_on,
-            shop_name: IndexMap.get(SHOP_NAME_FIELD).cloned().unwrap_or_default(),
-            shop_country: IndexMap
-                .get(SHOP_COUNTRY_FIELD)
+            shop_name: source.get(SHOP_NAME_FIELD).cloned().unwrap_or_default(),
+            shop_country: source.get(SHOP_COUNTRY_FIELD).cloned().unwrap_or_default(),
+            shop_email: source.get(EMAIL_FIELD).cloned().unwrap_or_default(),
+            shop_domain: source.get(SHOP_DOMAIN_FIELD).cloned().unwrap_or_default(),
+            excluding_check_data: source
+                .get(excluding_check_field)
                 .cloned()
                 .unwrap_or_default(),
-            shop_email: IndexMap.get(EMAIL_FIELD).cloned().unwrap_or_default(),
-            shop_domain: IndexMap.get(SHOP_DOMAIN_FIELD).cloned().unwrap_or_default(),
-            key: IndexMap.get(KEY_FIELD).cloned().unwrap_or_default(),
         })
     }
 }
