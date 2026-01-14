@@ -186,6 +186,7 @@ fn selector_with_file_support(
 }
 
 pub fn run(reset_default: bool) -> eframe::Result<()> {
+    #[cfg(target_os = "windows")]
     let native_options = NativeOptions {
         viewport: ViewportBuilder::default()
             .with_position(pos2(400.0, 200.0))
@@ -195,6 +196,22 @@ pub fn run(reset_default: bool) -> eframe::Result<()> {
             .with_resizable(false)
             .with_icon(
                 icon_data::from_png_bytes(&include_bytes!("../ass/icon/icon256.png")[..])
+                    .expect("Failed to load icon"),
+            ),
+        persist_window: false,
+        ..Default::default()
+    };
+
+    #[cfg(target_os = "macos")]
+    let native_options = NativeOptions {
+        viewport: ViewportBuilder::default()
+            .with_position(pos2(400.0, 200.0))
+            .with_inner_size([400.0, 120.0])
+            .with_max_inner_size([400.0, 120.0])
+            .with_min_inner_size([400.0, 120.0])
+            .with_resizable(false)
+            .with_icon(
+                icon_data::from_png_bytes(&include_bytes!("../ass/icon/icon1024mac.png")[..])
                     .expect("Failed to load icon"),
             ),
         persist_window: false,

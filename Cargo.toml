@@ -26,3 +26,8 @@ winres = "0.1"
 image = "0.25.8"
 ico = "0.4.0"
 cargo-bundle = "0.9.0"
+
+[package.metadata.bundle]
+name = "Jisrot"
+identifier = "com.jihooyoon.jisrot"
+icon = ["ass/icon/icon.icns"]
